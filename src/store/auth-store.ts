@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { User } from "@/features/auth/types/auth.types";
-import { getAccessToken, setTokens, removeTokens } from "@/lib/auth-storage";
+import { setTokens, removeTokens, getAccessToken } from "@/lib/auth-storage";
+import type { User } from "@/features/auth/types/auth.types";
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+
   setUser: (user: User | null) => void;
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
@@ -17,22 +18,32 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      // On first load, trust that a stored token means "probably still
+      // logged in" — the api-client's 401 handling corrects this the
+      // moment a real request proves the token is actually expired.
       isAuthenticated: !!getAccessToken(),
       isLoading: false,
+
       setUser: (user) => set({ user, isAuthenticated: !!user }),
+
       login: (user, accessToken, refreshToken) => {
         setTokens(accessToken, refreshToken);
         set({ user, isAuthenticated: true });
       },
+
       logout: () => {
         removeTokens();
         set({ user: null, isAuthenticated: false });
       },
+
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {
       name: "auth-storage",
+      // Only persist `user` — isAuthenticated is re-derived from the
+      // token, and isLoading is transient UI state that shouldn't survive
+      // a refresh.
       partialize: (state) => ({ user: state.user }),
-    }
-  )
+    },
+  ),
 );
