@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import { siteConfig } from "@/config/site";
-// @ts-expect-error -- Global CSS side-effect import is resolved by Next.js at build time.
 import "./globals.css";
 
 const poppins = Poppins({
