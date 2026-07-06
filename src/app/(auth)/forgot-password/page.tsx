@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
+import { ForgotPasswordForm } from "@/features/auth/components/ForgotPasswordForm";
 
 export const metadata: Metadata = {
   title: "Forgot Password",
 };
 
-/**
- * OWNER: Person B — Sprint 1
- * Keep thin — swap the placeholder for <ForgotPasswordForm /> once built
- * in features/auth/components/ForgotPasswordForm.tsx.
- */
 export default function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
@@ -21,10 +17,7 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      {/* TODO(Person B): render <ForgotPasswordForm /> here */}
-      <p className="text-sm text-muted-foreground italic">
-        TODO: ForgotPasswordForm goes here.
-      </p>
+      <ForgotPasswordForm />
     </div>
   );
 }

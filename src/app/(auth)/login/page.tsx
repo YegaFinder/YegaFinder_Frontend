@@ -1,24 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { LoginForm } from "@/features/auth/components/LoginForm";
 
 export const metadata: Metadata = {
   title: "Login",
 };
 
-/**
- * OWNER: Person B — Sprint 1
- *
- * This file should stay THIN. Its only job is routing — deciding that the
- * URL /login shows the login form. Do not put form fields, validation, or
- * submit logic directly in this file.
- *
- * Once features/auth/components/LoginForm.tsx exists, replace the
- * placeholder below with:
- *
- *   import { LoginForm } from "@/features/auth/components/LoginForm";
- *   export default function LoginPage() {
- *     return <LoginForm />;
- *   }
- */
 export default function LoginPage() {
   return (
     <div className="space-y-6">
@@ -31,10 +18,9 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* TODO(Person B): render <LoginForm /> here */}
-      <p className="text-sm text-muted-foreground italic">
-        TODO: LoginForm goes here.
-      </p>
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
