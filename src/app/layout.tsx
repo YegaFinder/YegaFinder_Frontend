@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import { siteConfig } from "@/config/site";
+import InstallPrompt from "@/components/shared/InstallPrompt";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -52,6 +53,7 @@ export default function RootLayout({
         className={`${poppins.variable} ${inter.variable} ${notoSansEthiopic.variable} font-sans antialiased min-h-screen bg-background text-foreground`}
       >
         {children}
+        <InstallPrompt />
       </body>
     </html>
   );
