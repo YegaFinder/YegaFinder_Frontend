@@ -18,10 +18,13 @@ const inter = Inter({
 });
 
 const notoSansEthiopic = Noto_Sans_Ethiopic({
-  subsets: ["latin"],
+  subsets: ["ethiopic"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-noto-ethiopic",
   display: "swap",
+  // Don't eagerly preload on every page — only pages that actually render
+  // Ethiopic text will trigger the download. Auth pages use Poppins/Inter only.
+  preload: false,
 });
 
 export const metadata: Metadata = {
