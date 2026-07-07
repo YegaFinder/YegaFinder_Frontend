@@ -9,7 +9,7 @@
  */
 export const ROUTES = {
   HOME: "/",
-
+  APP_HOME:"/home",//post-login placeholder, to be replaced with a real home screen in Sprint 2
   // Auth (Sprint 1)
   LOGIN: "/login",
   REGISTER: "/register",

@@ -28,7 +28,7 @@ export function useLogin() {
       // If middleware redirected a logged-out user to /login?redirectTo=/profile,
       // send them back to where they were headed instead of always to home.
       const redirectTo = searchParams.get("redirectTo");
-      router.push(redirectTo || ROUTES.HOME);
+      router.push(redirectTo || ROUTES.APP_HOME);
     } catch (err) {
       setError(getLoginErrorMessage(err));
     } finally {
