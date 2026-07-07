@@ -29,5 +29,6 @@ export interface PaginatedResponse<T> {
 export interface ApiError {
   success: false;
   message: string;
-  errors?: Record<string, string[]>;
+  path: string;
+  timestamp: string;
 }

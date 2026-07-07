@@ -1,25 +1,22 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LoginForm } from "@/features/auth/components/LoginForm";
+import { ResetPasswordForm } from "@/features/auth/components/ResetPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Login",
+  title: "Reset Password",
 };
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-left">
         <h1 className="text-2xl font-bold font-poppins text-foreground">
-          Welcome back
+          Set a new password
         </h1>
-        <p className="text-sm text-muted-foreground font-inter">
-          Log in to continue discovering YegnaFinder.
-        </p>
       </div>
 
       <Suspense fallback={null}>
-        <LoginForm />
+        <ResetPasswordForm />
       </Suspense>
     </div>
   );

@@ -12,6 +12,19 @@ declare global {
 
 declare const self: WorkerGlobalScope & SerwistGlobalConfig;
 
+const runtimeCaching = defaultCache.filter((entry) => {
+  const cacheName = (entry.handler as { cacheName?: string }).cacheName;
+
+  return ![
+    "pages-rsc-prefetch",
+    "pages-rsc",
+    "pages",
+    "next-data",
+    "apis",
+    "others",
+  ].includes(cacheName ?? "");
+});
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -22,7 +35,7 @@ const serwist = new Serwist({
   // explicit "network-first" for anything hitting live availability/booking
   // data) here as those features get built — see the PWA section of the
   // team README for the reasoning behind each strategy choice.
-  runtimeCaching: defaultCache,
+  runtimeCaching,
 });
 
 serwist.addEventListeners();

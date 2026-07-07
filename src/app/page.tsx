@@ -1,13 +1,14 @@
 import Link from "next/link";
+import { Logo } from "@/components/shared/logo";
 import { ROUTES } from "@/constants/routes";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-yegna-background dark:bg-yegna-dark">
       <div className="text-center space-y-6 max-w-2xl">
-        <h1 className="text-5xl font-bold tracking-tight text-yegna-primary font-poppins">
-          YegnaFinder
-        </h1>
+        <div className="flex justify-center">
+          <Logo height={56} />
+        </div>
         <p className="text-xl text-muted-foreground font-inter">
           Discover Everything Around You.
         </p>

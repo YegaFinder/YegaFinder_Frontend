@@ -3,7 +3,10 @@ import { getAccessToken, getRefreshToken, setTokens, removeTokens } from "./auth
 import { useAuthStore } from "@/store/auth-store";
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
+  // FIXED: was "http://localhost:8000/api" — missing the backend's global
+  // prefix. main.ts sets app.setGlobalPrefix('api/v1'), so every real
+  // route lives under /api/v1, not /api. Every request 404'd before this.
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
   headers: {
     "Content-Type": "application/json",
   },

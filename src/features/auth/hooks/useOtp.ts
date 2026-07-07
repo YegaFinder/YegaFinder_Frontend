@@ -6,24 +6,27 @@ import axios from "axios";
 
 import { authApi } from "../api/auth.api";
 import { ROUTES } from "@/constants/routes";
-import type { ForgotPasswordFormValues } from "../schemas/forgot-password.schema";
+import type { VerifyOtpRequest } from "../types/auth.types";
 
-export function useForgotPassword() {
+/**
+ * NEW: this hook didn't exist in the original repo — OtpForm imported
+ * it, but the file was missing, so the verify-otp page couldn't compile.
+ */
+export function useOtp() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const router = useRouter();
 
-  async function submit(values: ForgotPasswordFormValues) {
+  async function verifyOtp(payload: VerifyOtpRequest) {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Backend returns `data: null` here (see auth.api.ts) — there's
-      // nothing to read off the response. It always "succeeds" whether
-      // or not the email exists, so we move straight to the next step
-      // rather than waiting on a message that isn't coming.
-      await authApi.forgotPassword(values);
-      router.push(`${ROUTES.RESET_PASSWORD}?email=${encodeURIComponent(values.email)}`);
+      await authApi.verifyOtp(payload);
+      // No tokens come back from this endpoint (see auth.api.ts) — the
+      // user still has to log in for real afterward.
+      router.push(ROUTES.LOGIN);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -31,7 +34,7 @@ export function useForgotPassword() {
     }
   }
 
-  return { submit, isLoading, error };
+  return { verifyOtp, isLoading, error };
 }
 
 function getErrorMessage(err: unknown): string {

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,7 @@ import {
 import { useForgotPassword } from "../hooks/useForgotPassword";
 
 export function ForgotPasswordForm() {
-  const { submit, isLoading, error, successMessage } = useForgotPassword();
+  const { submit, isLoading, error } = useForgotPassword();
 
   const {
     register,
@@ -28,25 +27,6 @@ export function ForgotPasswordForm() {
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
   });
-
-  // Once the request succeeds, swap the form out for a confirmation state
-  // entirely — there's nothing left for the user to submit.
-  if (successMessage) {
-    return (
-      <div className="space-y-5 text-center">
-        <div className="flex justify-center">
-          <CheckCircle2 className="size-12 text-yegna-primary" />
-        </div>
-        <p className="text-sm text-foreground">{successMessage}</p>
-        <Link
-          href={ROUTES.LOGIN}
-          className="inline-block text-sm text-yegna-primary font-medium hover:underline"
-        >
-          Back to login
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5" noValidate>
@@ -67,7 +47,7 @@ export function ForgotPasswordForm() {
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading && <Spinner />}
-        {isLoading ? "Sending..." : "Send reset instructions"}
+        {isLoading ? "Sending..." : "Send reset code"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">

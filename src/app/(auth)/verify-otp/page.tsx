@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
+import { OtpForm } from "@/features/auth/components/OtpForm";
 
 export const metadata: Metadata = {
   title: "Verify OTP",
 };
 
-/**
- * OWNER: Person A — Sprint 1
- * Keep thin — swap the placeholder for <OtpForm /> once built
- * in features/auth/components/OtpForm.tsx.
- */
 export default function VerifyOtpPage() {
   return (
     <div className="space-y-6">
@@ -21,10 +17,7 @@ export default function VerifyOtpPage() {
         </p>
       </div>
 
-      {/* TODO(Person A): render <OtpForm /> here */}
-      <p className="text-sm text-muted-foreground italic">
-        TODO: OtpForm goes here.
-      </p>
+      <OtpForm />
     </div>
   );
 }
