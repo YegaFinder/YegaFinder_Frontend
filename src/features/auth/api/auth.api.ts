@@ -46,6 +46,10 @@ export const authApi = {
     await apiClient.post("/auth/verify-otp", payload);
   },
 
+  resendVerification: async (payload: { email: string }): Promise<void> => {
+    await apiClient.post("/auth/resend-verification", payload);
+  },
+
   /**
    * FIXED: return type corrected to void — backend returns
    * `data: null` here too (the "if the email exists..." message is
