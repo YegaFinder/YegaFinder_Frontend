@@ -6,7 +6,7 @@ export const apiClient = axios.create({
   // FIXED: was "http://localhost:8000/api" — missing the backend's global
   // prefix. main.ts sets app.setGlobalPrefix('api/v1'), so every real
   // route lives under /api/v1, not /api. Every request 404'd before this.
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: baseURL: process.env.NEXT_PUBLIC_API_URL || "https://yegnafinder-backend-production.up.railway.app/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
