@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Share, PlusSquare, Download } from "lucide-react";
+import { X, Share, SquarePlus, Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+// iOS Safari exposes this non-standard property; TS's lib.dom doesn't know about it
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
 }
 
 const DISMISS_KEY = "yega-install-dismissed-at";
@@ -19,9 +24,10 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     // Don't show if already installed / running standalone
+    const nav = window.navigator as NavigatorWithStandalone;
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
+      nav.standalone === true;
     if (isStandalone) return;
 
     // Respect a recent dismissal
@@ -33,7 +39,7 @@ export default function InstallPrompt() {
     }
 
     const ua = window.navigator.userAgent;
-    const iOSDevice = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const iOSDevice = /iPad|iPhone|iPod/.test(ua) && !("MSStream" in window);
     setIsIOS(iOSDevice);
 
     if (iOSDevice) {
@@ -79,7 +85,7 @@ export default function InstallPrompt() {
         {isIOS ? (
           <p className="text-muted-foreground mt-0.5">
             Tap <Share className="inline h-3.5 w-3.5 mx-0.5 -mt-0.5" /> Share,
-            then <PlusSquare className="inline h-3.5 w-3.5 mx-0.5 -mt-0.5" />{" "}
+            then <SquarePlus className="inline h-3.5 w-3.5 mx-0.5 -mt-0.5" />{" "}
             &ldquo;Add to Home Screen&rdquo;.
           </p>
         ) : (
