@@ -17,6 +17,8 @@ export function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: {
       firstName: "",
       lastName: "",
