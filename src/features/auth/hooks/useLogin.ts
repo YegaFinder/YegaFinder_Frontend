@@ -30,6 +30,19 @@ export function useLogin() {
       const redirectTo = searchParams.get("redirectTo");
       router.push(redirectTo || ROUTES.APP_HOME);
     } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 403) {
+        // Stash the email in the store so OtpForm knows who to verify
+        useAuthStore.getState().setUser({ 
+          id: "", 
+          email: values.email, 
+          firstName: "", 
+          lastName: "", 
+          role: "Customer", 
+          isVerified: false 
+        });
+        router.push(ROUTES.VERIFY_OTP);
+        return;
+      }
       setError(getLoginErrorMessage(err));
     } finally {
       setIsLoading(false);

@@ -16,11 +16,15 @@ export function useOtp() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null);
+
   const router = useRouter();
 
   async function verifyOtp(payload: VerifyOtpRequest) {
     setIsLoading(true);
     setError(null);
+    setResendSuccess(null);
 
     try {
       await authApi.verifyOtp(payload);
@@ -34,7 +38,22 @@ export function useOtp() {
     }
   }
 
-  return { verifyOtp, isLoading, error };
+  async function resendOtp(email: string) {
+    setIsResending(true);
+    setError(null);
+    setResendSuccess(null);
+    
+    try {
+      await authApi.resendVerification({ email });
+      setResendSuccess("A new verification code has been sent to your email.");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsResending(false);
+    }
+  }
+
+  return { verifyOtp, resendOtp, isLoading, isResending, error, resendSuccess };
 }
 
 function getErrorMessage(err: unknown): string {

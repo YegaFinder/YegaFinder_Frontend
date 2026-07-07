@@ -6,7 +6,10 @@ import "./globals.css";
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  // Only weight 700 (font-bold) is applied anywhere in the codebase right now.
+  // Add weights here as new designs introduce font-medium (500), font-semibold (600), etc.
+  // Keeping the list tight prevents Next.js generating unused preload <link> tags.
+  weight: ["700"],
   variable: "--font-poppins",
   display: "swap",
 });
@@ -15,13 +18,20 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  // Inter is a variable font — it covers all weights in one file, but Next.js
+  // still generates preload tags for multiple subsets. Setting preload:false
+  // avoids the "preloaded but not used" warning on pages that load quickly.
+  preload: false,
 });
 
 const notoSansEthiopic = Noto_Sans_Ethiopic({
-  subsets: ["latin"],
+  subsets: ["ethiopic"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-noto-ethiopic",
   display: "swap",
+  // Don't eagerly preload on every page — only pages that actually render
+  // Ethiopic text will trigger the download. Auth pages use Poppins/Inter only.
+  preload: false,
 });
 
 export const metadata: Metadata = {
