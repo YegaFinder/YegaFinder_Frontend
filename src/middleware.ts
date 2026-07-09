@@ -14,12 +14,28 @@ import { ROUTES } from "@/constants/routes";
  * server, where localStorage doesn't exist. See src/lib/auth-storage.ts
  * for why the access token is mirrored into a cookie on login.
  */
+const GUEST_ONLY_ROUTES: string[] = [ROUTES.LOGIN, ROUTES.REGISTER];
+
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
+  const { pathname } = request.nextUrl;
+  const isGuestOnlyRoute = GUEST_ONLY_ROUTES.includes(pathname);
 
-  if (!token) {
+  // Already logged in? Keep them off the guest-only auth screens
+  // (login/register) instead of letting a stale form render. This
+  // covers the back-button case: after logging in, /login can still
+  // sit in browser history — this makes sure that even if the browser
+  // navigates straight there (bfcache miss, bookmark, typed URL), the
+  // server sends them onward instead of showing the login page again.
+  if (token && isGuestOnlyRoute) {
+    return NextResponse.redirect(new URL(ROUTES.APP_HOME, request.url));
+  }
+
+  // Not logged in and hitting a protected route (not login/register
+  // themselves — otherwise this would redirect-loop back to itself).
+  if (!token && !isGuestOnlyRoute) {
     const loginUrl = new URL(ROUTES.LOGIN, request.url);
-    loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+    loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -39,5 +55,7 @@ export const config = {
     "/home/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
+    "/login",
+    "/register",
   ],
 };
