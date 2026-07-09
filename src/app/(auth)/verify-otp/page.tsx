@@ -19,7 +19,7 @@ export default function VerifyOtpPage() {
           YEGNAFINDER
         </h1>
         <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide">
-          Ethiopia's Smart Local Discovery Platform
+          Ethiopia&apos;s Smart Local Discovery Platform
         </p>
       </div>
 
