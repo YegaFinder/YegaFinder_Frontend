@@ -19,6 +19,7 @@ export function useRegister() {
   const [error, setError] = useState<string | null>(null);
 
   const setUser = useAuthStore((state) => state.setUser);
+  const setDevOtp = useAuthStore((state) => state.setDevOtp);
   const router = useRouter();
 
   async function register(payload: RegisterRequest) {
@@ -26,7 +27,7 @@ export function useRegister() {
     setError(null);
 
     try {
-      await authApi.register(payload);
+      const { otp } = await authApi.register(payload);
 
       // The backend doesn't return a user/tokens on register — just an
       // OTP-sent confirmation (see auth.api.ts). Stash the bits OtpForm
@@ -41,6 +42,11 @@ export function useRegister() {
         role: payload.role,
         isVerified: false,
       });
+
+      // `otp` is only present when the backend is running with
+      // TEST_MODE=true (email delivery disabled) — see auth.api.ts.
+      // OtpForm reads this to render a "here's your code" banner.
+      setDevOtp(otp ?? null);
 
       router.push(ROUTES.VERIFY_OTP);
     } catch (err) {

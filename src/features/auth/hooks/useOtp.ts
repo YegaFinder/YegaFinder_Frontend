@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 
 import { authApi } from "../api/auth.api";
+import { useAuthStore } from "@/store/auth-store";
 import { ROUTES } from "@/constants/routes";
 import type { VerifyOtpRequest } from "../types/auth.types";
 
@@ -19,6 +20,7 @@ export function useOtp() {
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
 
+  const setDevOtp = useAuthStore((state) => state.setDevOtp);
   const router = useRouter();
 
   async function verifyOtp(payload: VerifyOtpRequest) {
@@ -29,7 +31,9 @@ export function useOtp() {
     try {
       await authApi.verifyOtp(payload);
       // No tokens come back from this endpoint (see auth.api.ts) — the
-      // user still has to log in for real afterward.
+      // user still has to log in for real afterward. Clear any dev OTP
+      // we were showing — it's been consumed either way.
+      setDevOtp(null);
       router.push(ROUTES.LOGIN);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -42,9 +46,12 @@ export function useOtp() {
     setIsResending(true);
     setError(null);
     setResendSuccess(null);
-    
+
     try {
-      await authApi.resendVerification({ email });
+      const { otp } = await authApi.resendVerification({ email });
+      // `otp` is only present under TEST_MODE=true (see auth.api.ts) —
+      // replaces whatever code was shown before with the fresh one.
+      setDevOtp(otp ?? null);
       setResendSuccess("A new verification code has been sent to your email.");
     } catch (err) {
       setError(getErrorMessage(err));

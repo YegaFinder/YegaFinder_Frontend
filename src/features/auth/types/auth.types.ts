@@ -55,3 +55,15 @@ export interface ResetPasswordRequest {
   otp: string;
   newPassword: string;
 }
+
+/**
+ * Shape returned by register / resend-verification / forgot-password
+ * ONLY when the backend is running with TEST_MODE=true (no SMTP/Resend
+ * configured). `otp` is present so the frontend can render it directly
+ * instead of the user waiting on an email that isn't being sent. In
+ * production (TEST_MODE unset or false) `otp` is always undefined and
+ * the UI that reads it should simply render nothing.
+ */
+export interface DevOtpResponse {
+  otp?: string;
+}

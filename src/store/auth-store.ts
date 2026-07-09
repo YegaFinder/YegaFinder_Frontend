@@ -7,11 +7,22 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /**
+   * TEST_MODE-only: the OTP the backend echoed back in its response
+   * body (register / resend-verification / forgot-password) because
+   * email sending is disabled. Deliberately excluded from `partialize`
+   * below — it should never survive a refresh or leak into storage,
+   * and it gets cleared the moment it's no longer relevant (submitted,
+   * or a fresh code is requested). Remove this whole field once SMTP /
+   * Resend is confirmed working everywhere and TEST_MODE stays off.
+   */
+  devOtp: string | null;
 
   setUser: (user: User | null) => void;
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
+  setDevOtp: (otp: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -23,8 +34,10 @@ export const useAuthStore = create<AuthState>()(
       // moment a real request proves the token is actually expired.
       isAuthenticated: !!getAccessToken(),
       isLoading: false,
+      devOtp: null,
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setDevOtp: (otp) => set({ devOtp: otp }),
 
       login: (user, accessToken, refreshToken) => {
         setTokens(accessToken, refreshToken);
@@ -33,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         removeTokens();
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false, devOtp: null });
       },
 
       setLoading: (isLoading) => set({ isLoading }),

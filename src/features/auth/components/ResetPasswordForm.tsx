@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError, FormError, Spinner } from "@/components/shared/form-feedback";
+import { DevOtpBanner } from "@/components/shared/dev-otp-banner";
 import { ROUTES } from "@/constants/routes";
 
 import {
@@ -22,6 +23,7 @@ export function ResetPasswordForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -51,6 +53,8 @@ export function ResetPasswordForm() {
         <span className="font-medium text-foreground">{email}</span> and choose a new password.
       </p>
 
+      <DevOtpBanner onUse={(otp) => setValue("otp", otp, { shouldValidate: true })} />
+
       <div className="space-y-1.5">
         <Label htmlFor="otp">Reset code</Label>
         <Input
@@ -59,7 +63,15 @@ export function ResetPasswordForm() {
           maxLength={6}
           placeholder="123456"
           className="text-center text-lg tracking-[0.5em]"
-          {...register("otp")}
+          {...register("otp", {
+            onChange: (e) => {
+              // Strip anything that isn't an ASCII 0-9 — mobile OTP
+              // autofill / non-Latin keyboards can insert visually
+              // identical characters (e.g. fullwidth digits) that pass
+              // the eye test but fail the \d regex below.
+              e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+            },
+          })}
         />
         <FieldError message={errors.otp?.message} />
       </div>

@@ -8,6 +8,7 @@ import type {
   VerifyOtpRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  DevOtpResponse,
   User,
 } from "../types/auth.types";
 
@@ -32,9 +33,18 @@ export const authApi = {
    * an OTP email — no tokens, no user). Previously typed as returning
    * AuthResponse, which meant any caller destructuring
    * `{ user, accessToken, refreshToken }` off the result would crash.
+   *
+   * Returns `{ otp }` — `otp` is only populated when the backend is
+   * running with TEST_MODE=true (see .env.example / OtpService). This
+   * lets callers surface the code in the UI while transactional email
+   * is down, without the API layer having to know *why* it's present.
    */
-  register: async (payload: RegisterRequest): Promise<void> => {
-    await apiClient.post("/auth/register", payload);
+  register: async (payload: RegisterRequest): Promise<DevOtpResponse> => {
+    const { data } = await apiClient.post<ApiResponse<DevOtpResponse | null>>(
+      "/auth/register",
+      payload,
+    );
+    return { otp: data.data?.otp };
   },
 
   /**
@@ -46,17 +56,30 @@ export const authApi = {
     await apiClient.post("/auth/verify-otp", payload);
   },
 
-  resendVerification: async (payload: { email: string }): Promise<void> => {
-    await apiClient.post("/auth/resend-verification", payload);
+  /**
+   * Same TEST_MODE contract as register: `otp` is populated only when
+   * the backend has email sending disabled.
+   */
+  resendVerification: async (payload: { email: string }): Promise<DevOtpResponse> => {
+    const { data } = await apiClient.post<ApiResponse<DevOtpResponse | null>>(
+      "/auth/resend-verification",
+      payload,
+    );
+    return { otp: data.data?.otp };
   },
 
   /**
-   * FIXED: return type corrected to void — backend returns
-   * `data: null` here too (the "if the email exists..." message is
-   * informational only, not something callers should rely on reading).
+   * FIXED: return type corrected — backend returns `data: null` for an
+   * unknown email (by design, so the endpoint doesn't leak whether an
+   * account exists) but `data: { otp }` for a known email when
+   * TEST_MODE=true. Callers should treat `otp` as optional either way.
    */
-  forgotPassword: async (payload: ForgotPasswordRequest): Promise<void> => {
-    await apiClient.post("/auth/forgot-password", payload);
+  forgotPassword: async (payload: ForgotPasswordRequest): Promise<DevOtpResponse> => {
+    const { data } = await apiClient.post<ApiResponse<DevOtpResponse | null>>(
+      "/auth/forgot-password",
+      payload,
+    );
+    return { otp: data.data?.otp };
   },
 
   /**

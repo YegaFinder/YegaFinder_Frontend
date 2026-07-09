@@ -1,15 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { otpSchema, type OtpFormValues } from "../schemas/otp.schema";
 import { useOtp } from "../hooks/useOtp";
 import { useAuthStore } from "@/store/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { MessageSquare } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { FieldError, FormError, Spinner } from "@/components/shared/form-feedback";
+import { DevOtpBanner } from "@/components/shared/dev-otp-banner";
+import { ROUTES } from "@/constants/routes";
 
 export function OtpForm() {
   const router = useRouter();
@@ -20,6 +24,7 @@ export function OtpForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<OtpFormValues>({
     resolver: zodResolver(otpSchema),
@@ -34,7 +39,7 @@ export function OtpForm() {
 
   useEffect(() => {
     if (isMounted && !user?.email) {
-      router.push("/login");
+      router.push(ROUTES.LOGIN);
     }
   }, [user, router, isMounted]);
 
@@ -51,54 +56,66 @@ export function OtpForm() {
   if (!isMounted || !user?.email) return null;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {error && <div className="text-sm font-medium text-red-400 text-center">{error}</div>}
-      {resendSuccess && <div className="text-sm font-medium text-green-400 text-center">{resendSuccess}</div>}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <FormError message={error} />
+      {resendSuccess && (
+        <p className="text-sm font-medium text-emerald-600 text-center">{resendSuccess}</p>
+      )}
 
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-          <MessageSquare className="h-5 w-5" />
-        </div>
-        <Input 
-          id="otp" 
-          placeholder="Enter 6-Digit OTP" 
+      <p className="text-sm text-muted-foreground">
+        Enter the 6-digit code sent to{" "}
+        <span className="font-medium text-foreground">{user.email}</span>.
+      </p>
+
+      <DevOtpBanner onUse={(otp) => setValue("otp", otp, { shouldValidate: true })} />
+
+      <div className="space-y-1.5">
+        <Label htmlFor="otp">Verification code</Label>
+        <Input
+          id="otp"
+          inputMode="numeric"
           maxLength={6}
-          className="pl-12 bg-transparent border-slate-600 text-white placeholder:text-slate-400 h-12 rounded-lg focus-visible:ring-[#2563eb]"
-          {...register("otp")} 
-          aria-invalid={!!errors.otp} 
+          placeholder="123456"
+          className="text-center text-lg tracking-[0.5em]"
+          aria-invalid={!!errors.otp}
+          {...register("otp", {
+            onChange: (e) => {
+              // Same sanitization as ResetPasswordForm — strip anything
+              // that isn't an ASCII 0-9 before it reaches validation.
+              e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+            },
+          })}
         />
-        {errors.otp && <p className="text-xs text-red-400 mt-1 pl-2">{errors.otp.message}</p>}
+        <FieldError message={errors.otp?.message} />
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          className="flex-1 border-slate-600 bg-transparent text-[#3b82f6] hover:bg-slate-800 hover:text-[#3b82f6] h-12 rounded-lg tracking-widest font-semibold"
+      <div className="flex gap-3 pt-1">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1"
           onClick={() => router.back()}
           disabled={isLoading || isResending}
         >
-          BACK
+          Back
         </Button>
-        <Button 
-          type="submit" 
-          className="flex-1 bg-[#1d4ed8] hover:bg-[#1e40af] text-white h-12 rounded-lg tracking-widest font-semibold border-none" 
-          disabled={isLoading || isResending}
-        >
-          {isLoading ? "..." : "VERIFY"}
+        <Button type="submit" className="flex-1" disabled={isLoading || isResending}>
+          {isLoading && <Spinner />}
+          {isLoading ? "Verifying..." : "Verify"}
         </Button>
       </div>
 
-      <div className="text-center mt-2">
+      <p className="text-center text-sm text-muted-foreground">
+        Didn&apos;t receive a code?{" "}
         <button
           type="button"
           onClick={onResend}
           disabled={isResending || isLoading}
-          className="text-xs text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+          className="font-medium text-yegna-primary hover:underline disabled:opacity-50"
         >
-          {isResending ? "Sending..." : "Didn't receive a code? Resend"}
+          {isResending ? "Sending..." : "Resend"}
         </button>
-      </div>
+      </p>
     </form>
   );
 }
