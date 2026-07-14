@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-/**
- * NEW: mirrors the backend's create-user.dto.ts regex exactly —
- * at least one uppercase, one lowercase, and one digit-or-special-char.
- * Keeping these in sync means a user never gets past client-side
- * validation only to be rejected by the server's forbidNonWhitelisted /
- * class-validator pipeline with a confusing error.
- */
+
 const passwordRule = /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
 
 export const registerSchema = z
@@ -17,6 +11,7 @@ export const registerSchema = z
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
+      .max(72, "Password must be at most 72 characters")
       .regex(
         passwordRule,
         "Password must contain an uppercase letter, a lowercase letter, and a number or special character",

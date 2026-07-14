@@ -3,49 +3,59 @@ import type { NextRequest } from "next/server";
 import { ROUTES } from "@/constants/routes";
 
 /**
- * Runs BEFORE any matching page renders (see `matcher` below). Right now
- * this only checks whether an access-token cookie exists — it does not
- * yet decode the token to check `role`. Wiring in real role-based
- * protection (e.g. only "Merchant" can hit /dashboard/listings) is
- * planned for when the merchant dashboard is built; the shape is left
- * here so that work is a small addition, not a rewrite.
- *
- * Note: this reads a COOKIE, not localStorage — middleware runs on the
- * server, where localStorage doesn't exist. See src/lib/auth-storage.ts
- * for why the access token is mirrored into a cookie on login.
+ * FIXED: previously only listed /login and /register — /forgot-password,
+ * /reset-password, and /verify-otp were missing from both this list AND
+ * the `matcher` below, so middleware never even ran on them: an
+ * already-authenticated user could freely navigate back into the
+ * password-reset or OTP flow.
  */
-const GUEST_ONLY_ROUTES: string[] = [ROUTES.LOGIN, ROUTES.REGISTER];
+const GUEST_ONLY_ROUTES: string[] = [
+  ROUTES.LOGIN,
+  ROUTES.REGISTER,
+  ROUTES.FORGOT_PASSWORD,
+  ROUTES.RESET_PASSWORD,
+  ROUTES.VERIFY_OTP,
+];
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("access_token")?.value;
+  const hasSession = request.cookies.get("has_session")?.value;
+  const role = request.cookies.get("user_role")?.value;
   const { pathname } = request.nextUrl;
   const isGuestOnlyRoute = GUEST_ONLY_ROUTES.includes(pathname);
 
   // Already logged in? Keep them off the guest-only auth screens
-  // (login/register) instead of letting a stale form render. This
-  // covers the back-button case: after logging in, /login can still
-  // sit in browser history — this makes sure that even if the browser
-  // navigates straight there (bfcache miss, bookmark, typed URL), the
-  // server sends them onward instead of showing the login page again.
-  if (token && isGuestOnlyRoute) {
+  if (hasSession && isGuestOnlyRoute) {
     return NextResponse.redirect(new URL(ROUTES.APP_HOME, request.url));
   }
 
-  // Not logged in and hitting a protected route (not login/register
-  // themselves — otherwise this would redirect-loop back to itself).
-  if (!token && !isGuestOnlyRoute) {
+  // Not logged in and hitting a protected route
+  if (!hasSession && !isGuestOnlyRoute) {
     const loginUrl = new URL(ROUTES.LOGIN, request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // TODO: once role is available (decoded from the JWT, or a mirrored
-  // role cookie set alongside the token), add role checks here, e.g.:
-  //
-  //   if (request.nextUrl.pathname.startsWith(ROUTES.MERCHANT_DASHBOARD)
-  //       && role !== "Merchant") {
-  //     return NextResponse.redirect(new URL("/unauthorized", request.url));
-  //   }
+  // Role checks — soft, UX-only routing (Edge runtime can't call the
+  // backend). The backend remains the actual authority on every API call.
+  if (hasSession) {
+    const isCustomerRoute =
+      pathname === ROUTES.APP_HOME ||
+      pathname.startsWith(ROUTES.PROFILE) ||
+      pathname.startsWith(ROUTES.SAVED_PLACES) ||
+      pathname.startsWith(ROUTES.FAVORITES);
+    const isMerchantRoute = pathname.startsWith(ROUTES.MERCHANT_DASHBOARD);
+
+    if (isCustomerRoute && role === "Merchant") {
+      // FIXED: was a hardcoded "/dashboard" string — exactly the drift
+      // ROUTES exists to prevent (routes.ts's own docblock says every
+      // path, "including in middleware.ts", should come from here).
+      return NextResponse.redirect(new URL(ROUTES.MERCHANT_DASHBOARD, request.url));
+    }
+
+    if (isMerchantRoute && role === "Customer") {
+      return NextResponse.redirect(new URL(ROUTES.APP_HOME, request.url));
+    }
+  }
 
   return NextResponse.next();
 }
@@ -55,7 +65,12 @@ export const config = {
     "/home/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
+    "/saved-places/:path*",
+    "/favorites/:path*",
     "/login",
     "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-otp",
   ],
 };

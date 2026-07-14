@@ -3,6 +3,7 @@
   "short_name": "YegnaFinder",
   "description": "Ethiopia's Smart Local Discovery & Marketplace Platform.",
   "start_url": "/",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -26,6 +27,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/narrow.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/wide.png",
+      "sizes": "2560x1440",
+      "type": "image/png",
+      "form_factor": "wide"
     }
   ]
 }

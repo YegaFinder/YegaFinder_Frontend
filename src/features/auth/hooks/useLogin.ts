@@ -7,6 +7,7 @@ import axios from "axios";
 import { authApi } from "../api/auth.api";
 import { useAuthStore } from "@/store/auth-store";
 import { ROUTES } from "@/constants/routes";
+import { getErrorMessage } from "@/lib/errors";
 import type { LoginFormValues } from "../schemas/login.schema";
 
 export function useLogin() {
@@ -14,6 +15,7 @@ export function useLogin() {
   const [error, setError] = useState<string | null>(null);
 
   const storeLogin = useAuthStore((state) => state.login);
+  const setPendingVerificationEmail = useAuthStore((state) => state.setPendingVerificationEmail);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -25,44 +27,21 @@ export function useLogin() {
       const { user, accessToken, refreshToken } = await authApi.login(values);
       storeLogin(user, accessToken, refreshToken);
 
-      // If middleware redirected a logged-out user to /login?redirectTo=/profile,
-      // send them back to where they were headed instead of always to home.
-      // `replace` (not `push`) so /login isn't left in browser history —
-      // otherwise hitting Back after logging in lands right back on the
-      // login form.
+      // Redirect to the page the user was on before logging in
       const redirectTo = searchParams.get("redirectTo");
       router.replace(redirectTo || ROUTES.APP_HOME);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 403) {
-        // Stash the email in the store so OtpForm knows who to verify
-        useAuthStore.getState().setUser({ 
-          id: "", 
-          email: values.email, 
-          firstName: "", 
-          lastName: "", 
-          role: "Customer", 
-          isVerified: false 
-        });
+        
+        setPendingVerificationEmail(values.email);
         router.push(ROUTES.VERIFY_OTP);
         return;
       }
-      setError(getLoginErrorMessage(err));
+      setError(getErrorMessage(err, { 401: "Incorrect email or password." }));
     } finally {
       setIsLoading(false);
     }
   }
 
   return { login, isLoading, error };
-}
-
-function getLoginErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    if (err.response?.status === 401) {
-      return "Incorrect email or password.";
-    }
-    if (err.response?.data?.message) {
-      return err.response.data.message as string;
-    }
-  }
-  return "Something went wrong. Please try again.";
 }

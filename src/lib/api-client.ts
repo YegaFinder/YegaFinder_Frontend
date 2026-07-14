@@ -1,12 +1,10 @@
 import axios from "axios";
 import { getAccessToken, getRefreshToken, setTokens, removeTokens } from "./auth-storage";
 import { useAuthStore } from "@/store/auth-store";
+import { env } from "./env";
 
 export const apiClient = axios.create({
-  // FIXED: was "http://localhost:8000/api" — missing the backend's global
-  // prefix. main.ts sets app.setGlobalPrefix('api/v1'), so every real
-  // route lives under /api/v1, not /api. Every request 404'd before this.
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: env.NEXT_PUBLIC_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -24,6 +22,33 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// ---- Refresh token ---- 
+let refreshPromise: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) throw new Error("No refresh token available");
+
+    // Send the refresh token to the backend to get a new access token and refresh token 
+    const { data } = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, {
+      refreshToken,
+    });
+
+    const { accessToken, refreshToken: newRefreshToken } = data.data;
+    setTokens(accessToken, newRefreshToken);
+    return accessToken as string;
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
 /* ---- Response interceptor: silently refresh on a 401, retry once ---- */
 apiClient.interceptors.response.use(
   (response) => response,
@@ -34,21 +59,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) throw new Error("No refresh token available");
-
-        // Use the raw axios instance (not apiClient) so this call doesn't
-        // go through the request interceptor above and attach the
-        // already-expired access token — and so a failed refresh can't
-        // loop back into this same interceptor infinitely.
-        const { data } = await axios.post(
-          `${apiClient.defaults.baseURL}/auth/refresh`,
-          { refreshToken },
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } = data.data;
-        setTokens(accessToken, newRefreshToken);
-
+        const accessToken = await refreshAccessToken();
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
@@ -59,6 +70,18 @@ apiClient.interceptors.response.use(
         }
         return Promise.reject(refreshError);
       }
+    }
+
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers["retry-after"];
+      const message = retryAfter
+        ? `Too many attempts. Please try again in ${retryAfter} seconds.`
+        : "Too many attempts. Please try again shortly.";
+
+      // Override the error message so UI can simply show it
+      error.response.data = error.response.data || {};
+      error.response.data.message = message;
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

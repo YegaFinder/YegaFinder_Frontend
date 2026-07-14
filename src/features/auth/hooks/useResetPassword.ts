@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
 
 import { authApi } from "../api/auth.api";
 import { ROUTES } from "@/constants/routes";
+import { getErrorMessage } from "@/lib/errors";
 import type { ResetPasswordFormValues } from "../schemas/reset-password.schema";
 
 export function useResetPassword() {
@@ -38,23 +38,15 @@ export function useResetPassword() {
       // to log in fresh with the new password instead.
       router.push(`${ROUTES.LOGIN}?resetSuccess=true`);
     } catch (err) {
-      setError(getResetErrorMessage(err));
+      setError(
+        getErrorMessage(err, {
+          400: "That code is invalid or has expired, or your new password doesn't meet the requirements.",
+        }),
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
   return { submit, isLoading, error, email };
-}
-
-function getResetErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    if (err.response?.status === 400) {
-      return "That code is invalid or has expired, or your new password doesn't meet the requirements.";
-    }
-    if (err.response?.data?.message) {
-      return err.response.data.message as string;
-    }
-  }
-  return "Something went wrong. Please try again.";
 }

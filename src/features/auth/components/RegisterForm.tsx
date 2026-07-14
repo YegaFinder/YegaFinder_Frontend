@@ -3,16 +3,19 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+
 import { registerSchema, type RegisterFormValues } from "../schemas/register.schema";
 import { useRegister } from "../hooks/useRegister";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError, FormError, Spinner } from "@/components/shared/form-feedback";
+import { ROUTES } from "@/constants/routes";
 
 export function RegisterForm() {
-  const { register, isLoading, error } = useRegister();
+  const { register: registerUser, isLoading, error } = useRegister();
   const {
-    register: formRegister,
+    register,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormValues>({
@@ -28,7 +31,7 @@ export function RegisterForm() {
   });
 
   const onSubmit = (data: RegisterFormValues) => {
-    register({
+    registerUser({
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
@@ -38,63 +41,83 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {error && <div className="text-sm font-medium text-destructive">{error}</div>}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <FormError message={error} />
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" {...formRegister("firstName")} aria-invalid={!!errors.firstName} />
-          {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+          <Input id="firstName" aria-invalid={!!errors.firstName} {...register("firstName")} />
+          <FieldError message={errors.firstName?.message} />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="lastName">Last Name</Label>
-          <Input id="lastName" {...formRegister("lastName")} aria-invalid={!!errors.lastName} />
-          {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
+          <Input id="lastName" aria-invalid={!!errors.lastName} {...register("lastName")} />
+          <FieldError message={errors.lastName?.message} />
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="email">Email address</Label>
-        <Input id="email" type="email" placeholder="name@example.com" {...formRegister("email")} aria-invalid={!!errors.email} />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        <Input
+          id="email"
+          type="email"
+          placeholder="name@example.com"
+          autoComplete="email"
+          aria-invalid={!!errors.email}
+          {...register("email")}
+        />
+        <FieldError message={errors.email?.message} />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" {...formRegister("password")} aria-invalid={!!errors.password} />
-        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        <Input
+          id="password"
+          type="password"
+          autoComplete="new-password"
+          aria-invalid={!!errors.password}
+          {...register("password")}
+        />
+        <FieldError message={errors.password?.message} />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input id="confirmPassword" type="password" {...formRegister("confirmPassword")} aria-invalid={!!errors.confirmPassword} />
-        {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
+        <Input
+          id="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          aria-invalid={!!errors.confirmPassword}
+          {...register("confirmPassword")}
+        />
+        <FieldError message={errors.confirmPassword?.message} />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="role">I am a...</Label>
         <select
           id="role"
           className="flex h-11 w-full rounded-[14px] border border-yegna-border bg-yegna-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-yegna-primary"
-          {...formRegister("role")}
+          {...register("role")}
         >
           <option value="Customer">Customer</option>
           <option value="Merchant">Merchant</option>
         </select>
-        {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
+        <FieldError message={errors.role?.message} />
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading && <Spinner />}
         {isLoading ? "Creating account..." : "Sign up"}
       </Button>
 
-      <div className="text-center text-sm text-muted-foreground mt-4">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-yegna-primary hover:underline">
+        <Link href={ROUTES.LOGIN} className="font-medium text-yegna-primary hover:underline">
           Log in
         </Link>
-      </div>
+      </p>
     </form>
   );
 }

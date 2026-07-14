@@ -20,6 +20,7 @@ export const ROUTES = {
   // Customer (Sprint 2+)
   PROFILE: "/profile",
   SAVED_PLACES: "/saved-places",
+  FAVORITES: "/favorites",
 
   // Business discovery (Sprint 3+)
   BUSINESSES: "/businesses",
@@ -27,6 +28,7 @@ export const ROUTES = {
 
   // Merchant (later phase)
   MERCHANT_DASHBOARD: "/dashboard",
+  MERCHANT_PROFILE: "/dashboard/profile",
   MERCHANT_BOOKINGS: "/dashboard/bookings",
   MERCHANT_LISTINGS: "/dashboard/listings",
 

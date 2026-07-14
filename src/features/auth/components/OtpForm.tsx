@@ -17,7 +17,11 @@ import { ROUTES } from "@/constants/routes";
 
 export function OtpForm() {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
+  // FIXED: was `user?.email` off the real auth store `user` — that
+  // field used to get a fabricated User stuffed into it just so this
+  // form had an email to show. Now reads the dedicated
+  // pendingVerificationEmail field instead (see auth-store.ts).
+  const pendingEmail = useAuthStore((state) => state.pendingVerificationEmail);
   const { verifyOtp, resendOtp, isLoading, isResending, error, resendSuccess } = useOtp();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -38,22 +42,22 @@ export function OtpForm() {
   }, []);
 
   useEffect(() => {
-    if (isMounted && !user?.email) {
+    if (isMounted && !pendingEmail) {
       router.push(ROUTES.LOGIN);
     }
-  }, [user, router, isMounted]);
+  }, [pendingEmail, router, isMounted]);
 
   const onSubmit = (data: OtpFormValues) => {
-    if (!user?.email) return;
-    verifyOtp({ email: user.email, otp: data.otp });
+    if (!pendingEmail) return;
+    verifyOtp({ email: pendingEmail, otp: data.otp });
   };
 
   const onResend = () => {
-    if (!user?.email) return;
-    resendOtp(user.email);
+    if (!pendingEmail) return;
+    resendOtp(pendingEmail);
   };
 
-  if (!isMounted || !user?.email) return null;
+  if (!isMounted || !pendingEmail) return null;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
@@ -64,7 +68,7 @@ export function OtpForm() {
 
       <p className="text-sm text-muted-foreground">
         Enter the 6-digit code sent to{" "}
-        <span className="font-medium text-foreground">{user.email}</span>.
+        <span className="font-medium text-foreground">{pendingEmail}</span>.
       </p>
 
       <DevOtpBanner onUse={(otp) => setValue("otp", otp, { shouldValidate: true })} />

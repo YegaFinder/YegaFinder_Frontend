@@ -1,6 +1,7 @@
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
-
+const HAS_SESSION_COOKIE = "has_session";
+const ROLE_COOKIE = "user_role";
 /**
  * Why both localStorage AND a cookie:
  *
@@ -44,16 +45,20 @@ export function getRefreshToken(): string | null {
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-export function setTokens(accessToken: string, refreshToken: string) {
+export function setTokens(accessToken: string, refreshToken: string, role?: string) {
   if (!isBrowser()) return;
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  setCookie(ACCESS_TOKEN_KEY, accessToken);
+  setCookie(HAS_SESSION_COOKIE, "1");
+  if (role) {
+    setCookie(ROLE_COOKIE, role);
+  }
 }
 
 export function removeTokens() {
   if (!isBrowser()) return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
-  deleteCookie(ACCESS_TOKEN_KEY);
+  deleteCookie(HAS_SESSION_COOKIE);
+  deleteCookie(ROLE_COOKIE);
 }

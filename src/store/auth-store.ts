@@ -7,22 +7,19 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  /**
-   * TEST_MODE-only: the OTP the backend echoed back in its response
-   * body (register / resend-verification / forgot-password) because
-   * email sending is disabled. Deliberately excluded from `partialize`
-   * below — it should never survive a refresh or leak into storage,
-   * and it gets cleared the moment it's no longer relevant (submitted,
-   * or a fresh code is requested). Remove this whole field once SMTP /
-   * Resend is confirmed working everywhere and TEST_MODE stays off.
-   */
+
+ 
   devOtp: string | null;
+
+  
+  pendingVerificationEmail: string | null;
 
   setUser: (user: User | null) => void;
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
   setDevOtp: (otp: string | null) => void;
+  setPendingVerificationEmail: (email: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -35,18 +32,20 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: !!getAccessToken(),
       isLoading: false,
       devOtp: null,
+      pendingVerificationEmail: null,
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
       setDevOtp: (otp) => set({ devOtp: otp }),
+      setPendingVerificationEmail: (email) => set({ pendingVerificationEmail: email }),
 
       login: (user, accessToken, refreshToken) => {
-        setTokens(accessToken, refreshToken);
-        set({ user, isAuthenticated: true });
+        setTokens(accessToken, refreshToken, user?.role);
+        set({ user, isAuthenticated: true, pendingVerificationEmail: null });
       },
 
       logout: () => {
         removeTokens();
-        set({ user: null, isAuthenticated: false, devOtp: null });
+        set({ user: null, isAuthenticated: false, devOtp: null, pendingVerificationEmail: null });
       },
 
       setLoading: (isLoading) => set({ isLoading }),
@@ -54,8 +53,8 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       // Only persist `user` — isAuthenticated is re-derived from the
-      // token, and isLoading is transient UI state that shouldn't survive
-      // a refresh.
+      // token, and isLoading/devOtp/pendingVerificationEmail are all
+      // transient UI state that shouldn't survive a refresh.
       partialize: (state) => ({ user: state.user }),
     },
   ),

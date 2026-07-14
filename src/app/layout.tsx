@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import { siteConfig } from "@/config/site";
 import InstallPrompt from "@/components/shared/InstallPrompt";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { ToastProvider } from "@/components/shared/toast-provider";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -62,8 +64,11 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${inter.variable} ${notoSansEthiopic.variable} font-sans antialiased min-h-screen bg-background text-foreground`}
       >
-        {children}
-        <InstallPrompt />
+        <QueryProvider>
+          {children}
+          <InstallPrompt />
+          <ToastProvider />
+        </QueryProvider>
       </body>
     </html>
   );

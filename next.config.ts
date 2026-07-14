@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
 
-// PWA setup (Serwist generates the service worker from src/app/sw.ts
-// and writes it to public/sw.js at build time).
+
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
@@ -10,12 +9,39 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === "development",
 });
 
+const isDev = process.env.NODE_ENV === "development";
+
+/*
+ * NOT done here: fully removing 'unsafe-inline' from script-src would
+ * need a per-request nonce wired through middleware for every inline
+ * script Next.js itself injects. That's real, valuable follow-up work
+ * (flagged in the audit) 
+ */
+const scriptSrc = isDev ? "'self' 'unsafe-eval' 'unsafe-inline'" : "'self' 'unsafe-inline'";
+
 const nextConfig: NextConfig = {
-  /**
-   * Add image domains here as soon as the backend/CDN serving
-   * business photos, logos, and banners is known, e.g.:
-   * images: { remotePatterns: [{ protocol: "https", hostname: "cdn.yegnafinder.com" }] }
-   */
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "cdn.yegnafinder.com" },
+      { protocol: "https", hostname: "yegnafinder-storage.s3.amazonaws.com" },
+    ],
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://cdn.yegnafinder.com https://yegnafinder-storage.s3.amazonaws.com; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://api.yegnafinder.com;`,
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
 };
 
 export default withSerwist(nextConfig);

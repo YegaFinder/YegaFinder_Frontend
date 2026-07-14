@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 
 import { authApi } from "../api/auth.api";
 import { useAuthStore } from "@/store/auth-store";
 import { ROUTES } from "@/constants/routes";
+import { getErrorMessage } from "@/lib/errors";
 import type { ForgotPasswordFormValues } from "../schemas/forgot-password.schema";
 
 export function useForgotPassword() {
@@ -36,11 +36,4 @@ export function useForgotPassword() {
   }
 
   return { submit, isLoading, error };
-}
-
-function getErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err) && err.response?.data?.message) {
-    return err.response.data.message as string;
-  }
-  return "Something went wrong. Please try again.";
 }
