@@ -17,10 +17,8 @@ import { ROUTES } from "@/constants/routes";
 
 export function OtpForm() {
   const router = useRouter();
-  // FIXED: was `user?.email` off the real auth store `user` — that
-  // field used to get a fabricated User stuffed into it just so this
-  // form had an email to show. Now reads the dedicated
-  // pendingVerificationEmail field instead (see auth-store.ts).
+  // Reads the dedicated pendingVerificationEmail field (NOT user?.email
+  // — there's no real, logged-in User yet at this point; see auth-store.ts).
   const pendingEmail = useAuthStore((state) => state.pendingVerificationEmail);
   const { verifyOtp, resendOtp, isLoading, isResending, error, resendSuccess } = useOtp();
   const [isMounted, setIsMounted] = useState(false);
@@ -84,8 +82,10 @@ export function OtpForm() {
           aria-invalid={!!errors.otp}
           {...register("otp", {
             onChange: (e) => {
-              // Same sanitization as ResetPasswordForm — strip anything
-              // that isn't an ASCII 0-9 before it reaches validation.
+              // Strips anything that isn't an ASCII 0-9 before it
+              // reaches validation — some IMEs/mobile numeric keyboards
+              // can emit full-width Unicode digits (U+FF10-FF19) that
+              // look identical but fail an ASCII-only regex.
               e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
             },
           })}

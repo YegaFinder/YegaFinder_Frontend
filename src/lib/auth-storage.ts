@@ -1,7 +1,6 @@
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
-const HAS_SESSION_COOKIE = "has_session";
-const ROLE_COOKIE = "user_role";
+
 /**
  * Why both localStorage AND a cookie:
  *
@@ -13,11 +12,21 @@ const ROLE_COOKIE = "user_role";
  *   since cookies are sent along with every request automatically.
  *
  * So we mirror the access token into a lightweight, JS-readable cookie
- * purely so middleware has something to check for route protection.
- * This cookie is NOT httpOnly (it's set from client JS), so it should
- * only ever be used for a presence check ("is there a token at all?"),
- * never trusted as a secure source of truth — the real authorization
- * check still happens against the backend on every API call.
+ * (`has_session`) purely so middleware has something to check for route
+ * protection. This cookie is NOT httpOnly (it's set from client JS), so
+ * it should only ever be used for a presence check ("is there a token
+ * at all?"), never trusted as a secure source of truth — the real
+ * authorization check still happens against the backend on every API
+ * call.
+ *
+ * A second cookie, `user_role`, mirrors the user's role for the same
+ * reason: middleware.ts does a soft, UX-only redirect (e.g. bouncing a
+ * Merchant away from /home) and, being Edge-runtime, can't read
+ * Zustand's in-memory store or call the backend to find out who's
+ * asking. `role` is optional on setTokens() and only written when
+ * provided — api-client.ts's silent refresh calls setTokens() without
+ * it, so an in-flight token refresh never clobbers the existing role
+ * cookie.
  */
 
 function isBrowser() {
@@ -49,16 +58,14 @@ export function setTokens(accessToken: string, refreshToken: string, role?: stri
   if (!isBrowser()) return;
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  setCookie(HAS_SESSION_COOKIE, "1");
-  if (role) {
-    setCookie(ROLE_COOKIE, role);
-  }
+  setCookie("has_session", "1");
+  if (role) setCookie("user_role", role);
 }
 
 export function removeTokens() {
   if (!isBrowser()) return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
-  deleteCookie(HAS_SESSION_COOKIE);
-  deleteCookie(ROLE_COOKIE);
+  deleteCookie("has_session");
+  deleteCookie("user_role");
 }

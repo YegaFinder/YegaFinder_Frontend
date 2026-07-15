@@ -22,7 +22,16 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ---- Refresh token ---- 
+/**
+ * If several requests 401 at the same moment (e.g. a page firing
+ * multiple parallel queries right after the access token expired),
+ * each one would otherwise independently call POST /auth/refresh.
+ * Depending on whether the backend rotates refresh tokens on use, this
+ * can invalidate a sibling request's retry or silently log the user
+ * out. So: the first 401 starts the refresh and stores the in-flight
+ * Promise; every other 401 that arrives while it's pending awaits that
+ * same Promise instead of starting its own.
+ */
 let refreshPromise: Promise<string> | null = null;
 
 async function refreshAccessToken(): Promise<string> {
@@ -32,7 +41,10 @@ async function refreshAccessToken(): Promise<string> {
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error("No refresh token available");
 
-    // Send the refresh token to the backend to get a new access token and refresh token 
+    // Use the raw axios instance (not apiClient) so this call doesn't
+    // go through the request interceptor above and attach the
+    // already-expired access token — and so a failed refresh can't
+    // loop back into this same interceptor infinitely.
     const { data } = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, {
       refreshToken,
     });
@@ -70,18 +82,6 @@ apiClient.interceptors.response.use(
         }
         return Promise.reject(refreshError);
       }
-    }
-
-    if (error.response?.status === 429) {
-      const retryAfter = error.response.headers["retry-after"];
-      const message = retryAfter
-        ? `Too many attempts. Please try again in ${retryAfter} seconds.`
-        : "Too many attempts. Please try again shortly.";
-
-      // Override the error message so UI can simply show it
-      error.response.data = error.response.data || {};
-      error.response.data.message = message;
-      return Promise.reject(error);
     }
 
     return Promise.reject(error);
