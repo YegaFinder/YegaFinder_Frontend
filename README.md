@@ -17,4 +17,3 @@ Visit `http://localhost:3000`.
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
 shadcn/ui (Radix primitives + CVA) · Zustand · Axios · Zod + React Hook
 Form · Serwist (PWA / service worker).
-

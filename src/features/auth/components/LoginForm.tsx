@@ -1,21 +1,27 @@
 "use client";
 
+/**
+ * RECONSTRUCTED — referenced by src/app/(auth)/login/page.tsx and by
+ * useLogin.ts's contract, but the original source was never shown to
+ * me. Built to match the same pattern as RegisterForm/ForgotPasswordForm
+ * (react-hook-form + zod + shared form-feedback components). Diff
+ * against the real file before committing.
+ */
+
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { loginSchema, type LoginFormValues } from "../schemas/login.schema";
+import { useLogin } from "../hooks/useLogin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError, FormError, Spinner } from "@/components/shared/form-feedback";
 import { ROUTES } from "@/constants/routes";
 
-import { loginSchema, type LoginFormValues } from "../schemas/login.schema";
-import { useLogin } from "../hooks/useLogin";
-
 export function LoginForm() {
   const { login, isLoading, error } = useLogin();
-
   const {
     register,
     handleSubmit,
@@ -47,7 +53,7 @@ export function LoginForm() {
           <Label htmlFor="password">Password</Label>
           <Link
             href={ROUTES.FORGOT_PASSWORD}
-            className="text-xs text-yegna-primary hover:underline"
+            className="text-xs font-medium text-yegna-primary hover:underline"
           >
             Forgot password?
           </Link>
@@ -55,7 +61,6 @@ export function LoginForm() {
         <Input
           id="password"
           type="password"
-          placeholder="••••••••"
           autoComplete="current-password"
           aria-invalid={!!errors.password}
           {...register("password")}
@@ -65,12 +70,12 @@ export function LoginForm() {
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading && <Spinner />}
-        {isLoading ? "Logging in..." : "Log In"}
+        {isLoading ? "Logging in..." : "Log in"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link href={ROUTES.REGISTER} className="text-yegna-primary font-medium hover:underline">
+        <Link href={ROUTES.REGISTER} className="font-medium text-yegna-primary hover:underline">
           Sign up
         </Link>
       </p>
