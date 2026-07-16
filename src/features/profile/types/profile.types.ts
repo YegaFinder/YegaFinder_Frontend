@@ -5,8 +5,6 @@ export interface BaseProfile {
   updatedAt: string;
 }
 
-
-
 export interface SavedAddress {
   id: string;
   label: string;
@@ -79,7 +77,6 @@ export interface MerchantProfile extends BaseProfile {
   contactEmail?: string | null;
   contactPhone?: string | null;
 
-  
   businessAddress?: string | null;
   latitude?: number | null;
   longitude?: number | null;
@@ -96,3 +93,46 @@ export interface MerchantProfile extends BaseProfile {
   businessHours: BusinessHours[];
   isProfileComplete: boolean;
 }
+
+/* ---------------------------- Request shapes ---------------------------- */
+/* Kept here (shared), same convention as auth.types.ts, so both the Zod   */
+/* schemas and the API layer infer from — or are checked against — the     */
+/* same contract. Sprint 2 (Customer). Merchant request types land         */
+/* alongside the merchant profile feature, later.                          */
+
+/**
+ * PATCH /profile/me body. Only customer-editable fields — name/email/phone
+ * live on `User` (features/auth/types/auth.types.ts) and are not part of
+ * this contract; there's currently no confirmed endpoint for editing them,
+ * so the profile form intentionally does not attempt to submit them here.
+ */
+export interface UpdateCustomerProfileRequest {
+  avatarUrl?: string | null;
+  dateOfBirth?: string | null;
+  bio?: string | null;
+  preferredLanguage?: string;
+}
+
+/**
+ * PATCH /profile/me/notifications body. `notificationPreferences` on
+ * CustomerProfile is a loose Record<string, boolean> (backend hasn't
+ * published a fixed key list), so this is a partial map of whichever keys
+ * are being changed rather than a fixed set of named booleans.
+ */
+export type UpdateNotificationPreferencesRequest = Record<string, boolean>;
+
+/**
+ * POST /profile/addresses body. NOTE: `latitude`/`longitude` are required,
+ * non-null numbers on the `SavedAddress` response type, but there is no
+ * map/geocoding UI yet to obtain real coordinates from a typed address —
+ * see SavedAddressesList.tsx's docblock. Until that's resolved, these are
+ * sent as 0 placeholders and should be treated as unconfirmed.
+ */
+export interface CreateSavedAddressRequest {
+  label: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
+export type UpdateSavedAddressRequest = Partial<CreateSavedAddressRequest>;
