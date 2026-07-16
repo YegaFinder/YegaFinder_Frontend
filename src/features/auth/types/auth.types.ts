@@ -1,5 +1,7 @@
 export type Role = "Customer" | "Merchant" | "Moderator" | "Admin";
 
+export type Role = "Customer" | "Merchant" | "Moderator" | "Admin";
+
 export interface User {
   id: string;
   email: string;
@@ -21,6 +23,8 @@ export interface AuthResponse {
   refreshToken: string;
   role?: Role;
 }
+
+// ---------------------------- Request shapes ---------------------------- */
 
 // ... request types (unchanged)
 
