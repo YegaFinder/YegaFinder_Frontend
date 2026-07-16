@@ -33,11 +33,8 @@ async function refreshAccessToken(): Promise<string> {
     if (!refreshToken) throw new Error("No refresh token available");
 
     // Send the refresh token to the backend to get a new access token and refresh token 
-    const { data } = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, {
-      refreshToken,
-    });
-
-    const { accessToken, refreshToken: newRefreshToken } = data.data;
+    const { data } = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, { refreshToken });
+const { accessToken, refreshToken: newRefreshToken } = data; // flat response
     setTokens(accessToken, newRefreshToken);
     return accessToken as string;
   })();

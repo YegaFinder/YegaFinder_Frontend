@@ -1,9 +1,3 @@
-/**
- * The four roles defined in the SRS (section 3.1). Every role-based
- * check in the app — middleware, UI conditionals, API calls — should
- * compare against this type, never a raw string, so a typo is caught
- * by TypeScript instead of silently failing at runtime.
- */
 export type Role = "Customer" | "Merchant" | "Moderator" | "Admin";
 
 export interface User {
@@ -14,14 +8,21 @@ export interface User {
   role: Role;
   isVerified: boolean;
   avatarUrl?: string;
+  phone?: string;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
 }
 
-/** What the backend returns on successful login or registration. */
 export interface AuthResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+  role?: Role;
 }
+
+// ... request types (unchanged)
 
 /* ---------------------------- Request shapes ---------------------------- */
 /* Kept here (shared) rather than duplicated inside each schema file, so   */
