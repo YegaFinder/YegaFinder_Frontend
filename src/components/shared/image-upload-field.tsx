@@ -4,11 +4,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
-import { useImageUpload } from "@/lib/hooks/useImageUpload";
+import { useImageUpload, ALLOWED_FILE_TYPES, MAX_FILE_SIZE, type UploadType } from "@/lib/hooks/useImageUpload";
 import { Button } from "@/components/ui/button";
 
 interface ImageUploadFieldProps {
   label: string;
+  /** Which presign bucket/validation rule this upload uses — required
+   * now that the real /uploads/presign contract needs it. */
+  uploadType: UploadType;
   accept?: string;
   onUploadSuccess: (url: string) => void;
   onRemove?: () => void;
@@ -17,7 +20,8 @@ interface ImageUploadFieldProps {
 
 export function ImageUploadField({
   label,
-  accept = "image/jpeg, image/png, image/webp",
+  uploadType,
+  accept,
   onUploadSuccess,
   onRemove,
   aspectRatio = "auto",
@@ -27,7 +31,8 @@ export function ImageUploadField({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
 
-  // Revoke preview URL on unmount
+  const resolvedAccept = accept ?? ALLOWED_FILE_TYPES[uploadType].join(", ");
+
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -38,26 +43,35 @@ export function ImageUploadField({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Simple client-side check (not a replacement for backend validation)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File is too large. Max size is 5MB.");
+    // Fast client-side pre-check using the SAME constants the hook
+    // itself enforces (imported, not re-declared) — just avoids a round
+    // trip to /uploads/presign for an obviously-invalid file.
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File is too large. Max size is 10MB.");
+      return;
+    }
+    if (!ALLOWED_FILE_TYPES[uploadType].includes(file.type)) {
+      toast.error(`Unsupported file type. Allowed: ${ALLOWED_FILE_TYPES[uploadType].join(", ")}`);
       return;
     }
 
+    // Show the picked image immediately (with the progress bar over it)
+    // instead of waiting for the upload to finish.
+    const localPreview = URL.createObjectURL(file);
+    setPreview((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return localPreview;
+    });
+
     try {
-      const url = await uploadImage(file);
-      setPreview((old) => {
-        if (old) URL.revokeObjectURL(old);
-        return url;
-      });
+      const url = await uploadImage(file, uploadType);
       onUploadSuccess(url);
       toast.success("Image uploaded successfully!");
     } catch (err) {
-      
       if (process.env.NODE_ENV !== "production") {
         console.error("Image upload failed:", err);
       }
-      toast.error("Failed to upload image. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Failed to upload image. Please try again.");
     }
   };
 
@@ -70,9 +84,6 @@ export function ImageUploadField({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* this label text was never wired to the file input via
-          htmlFor/id, so screen readers didn't announce it as the
-          input's label. */}
       <label htmlFor={inputId} className="text-sm font-medium">
         {label}
       </label>
@@ -97,7 +108,7 @@ export function ImageUploadField({
           id={inputId}
           type="file"
           ref={fileInputRef}
-          accept={accept}
+          accept={resolvedAccept}
           onChange={handleFileChange}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           disabled={isUploading}
@@ -112,15 +123,8 @@ export function ImageUploadField({
           />
         </div>
       )}
-      
       {preview && !isUploading && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleRemove}
-          className="w-fit gap-1.5 text-muted-foreground"
-        >
+        <Button type="button" variant="ghost" size="sm" onClick={handleRemove} className="w-fit gap-1.5 text-muted-foreground">
           <X className="size-3.5" />
           Remove
         </Button>

@@ -11,19 +11,14 @@ const withSerwist = withSerwistInit({
 
 const isDev = process.env.NODE_ENV === "development";
 
-/*
- * NOT done here: fully removing 'unsafe-inline' from script-src would
- * need a per-request nonce wired through middleware for every inline
- * script Next.js itself injects. That's real, valuable follow-up work
- * (flagged in the audit) 
- */
+
 const scriptSrc = isDev ? "'self' 'unsafe-eval' 'unsafe-inline'" : "'self' 'unsafe-inline'";
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cdn.yegnafinder.com" },
-      { protocol: "https", hostname: "yegnafinder-storage.s3.amazonaws.com" },
+      { protocol: "https", hostname: "yegnafinder-uploads.s3.amazonaws.com" },
     ],
   },
   async headers() {
