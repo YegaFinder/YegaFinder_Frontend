@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { ROUTES } from "@/constants/routes";
 
+/**
+ * FIXED: previously only listed /login and /register — /forgot-password,
+ * /reset-password, and /verify-otp were missing from both this list AND
+ * the `matcher` below, so middleware never even ran on them: an
+ * already-authenticated user could freely navigate back into the
+ * password-reset or OTP flow.
+ */
 const GUEST_ONLY_ROUTES: string[] = [
   ROUTES.LOGIN,
   ROUTES.REGISTER,
@@ -39,6 +46,9 @@ export function middleware(request: NextRequest) {
     const isMerchantRoute = pathname.startsWith(ROUTES.MERCHANT_DASHBOARD);
 
     if (isCustomerRoute && role === "Merchant") {
+      // FIXED: was a hardcoded "/dashboard" string — exactly the drift
+      // ROUTES exists to prevent (routes.ts's own docblock says every
+      // path, "including in middleware.ts", should come from here).
       return NextResponse.redirect(new URL(ROUTES.MERCHANT_DASHBOARD, request.url));
     }
 

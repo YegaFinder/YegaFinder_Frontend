@@ -9,6 +9,7 @@ import { ROUTES } from "@/constants/routes";
 import { getErrorMessage } from "@/lib/errors";
 import type { VerifyOtpRequest } from "../types/auth.types";
 
+
 export function useOtp() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,10 +28,7 @@ export function useOtp() {
 
     try {
       await authApi.verifyOtp(payload);
-      // Confirmed against the backend controller: this endpoint returns
-      // data: null, no tokens — the user still has to log in for real
-      // afterward. Clear any dev OTP and the pending-verification
-      // marker, then send them to /login (NOT a dashboard).
+      // OTP verified successfully — clear the store and send the user to log in.
       setDevOtp(null);
       setPendingVerificationEmail(null);
       router.push(ROUTES.LOGIN);
@@ -48,6 +46,8 @@ export function useOtp() {
 
     try {
       const { otp } = await authApi.resendVerification({ email });
+      // `otp` is only present when the backend is running with TEST_MODE=true (email delivery disabled) — see auth.api.ts.
+      // OtpForm reads this to render a "here's your code" banner.
       setDevOtp(otp ?? null);
       setResendSuccess("A new verification code has been sent to your email.");
     } catch (err) {

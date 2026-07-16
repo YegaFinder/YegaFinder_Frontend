@@ -27,3 +27,4 @@ export function Logo({ className, height = 32 }: LogoProps) {
     />
   );
 }
+

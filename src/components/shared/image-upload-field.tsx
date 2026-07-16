@@ -27,8 +27,7 @@ export function ImageUploadField({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
 
-  // object URLs from URL.createObjectURL() are never released by the
-  // browser on their own — revoke on change/unmount to avoid leaking.
+  // Revoke preview URL on unmount
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -39,6 +38,7 @@ export function ImageUploadField({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Simple client-side check (not a replacement for backend validation)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File is too large. Max size is 5MB.");
       return;
@@ -53,6 +53,7 @@ export function ImageUploadField({
       onUploadSuccess(url);
       toast.success("Image uploaded successfully!");
     } catch (err) {
+      
       if (process.env.NODE_ENV !== "production") {
         console.error("Image upload failed:", err);
       }
@@ -69,6 +70,9 @@ export function ImageUploadField({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* this label text was never wired to the file input via
+          htmlFor/id, so screen readers didn't announce it as the
+          input's label. */}
       <label htmlFor={inputId} className="text-sm font-medium">
         {label}
       </label>
@@ -108,6 +112,7 @@ export function ImageUploadField({
           />
         </div>
       )}
+      
       {preview && !isUploading && (
         <Button
           type="button"
