@@ -9,9 +9,11 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
   if (!isAllowed) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-muted/20">
       <AppHeader role="Merchant" />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <div className="container max-w-5xl mx-auto px-4 py-8">{children}</div>
+      </main>
     </div>
   );
 }
