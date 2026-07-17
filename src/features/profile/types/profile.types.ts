@@ -1,11 +1,11 @@
+import type { User } from "@/features/auth/types/auth.types";
+
 export interface BaseProfile {
   id: string;
-  userId: string;
+  user: User;
   createdAt: string;
   updatedAt: string;
 }
-
-
 
 export interface SavedAddress {
   id: string;
@@ -15,37 +15,31 @@ export interface SavedAddress {
   longitude: number;
 }
 
+
 export interface CustomerProfile extends BaseProfile {
-  avatarUrl?: string | null;
-  dateOfBirth?: string | null; // ISO date string
-  bio?: string | null;
-  preferredLanguage: string; // default "en"
+  avatarUrl?: string;
+  dateOfBirth?: string;
+  bio?: string;
+  preferredLanguage: string;
   notificationPreferences: Record<string, boolean>;
   savedAddresses: SavedAddress[];
   loyaltyPoints: number;
   isProfileComplete: boolean;
 }
 
-/* ============================ Merchant Profile ============================ */
-
 export type DayOfWeek =
-  | "Monday"
-  | "Tuesday"
-  | "Wednesday"
-  | "Thursday"
-  | "Friday"
-  | "Saturday"
-  | "Sunday";
+  | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
 
 export interface BusinessHours {
   id: string;
+  merchantProfileId: string;
   dayOfWeek: DayOfWeek;
-  openTime?: string | null; // "HH:mm", 24-hour
-  closeTime?: string | null;
+  openTime?: string;
+  closeTime?: string;
   isClosed: boolean;
   is24Hours: boolean;
-  breakStartTime?: string | null;
-  breakEndTime?: string | null;
+  breakStartTime?: string;
+  breakEndTime?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,34 +59,27 @@ export interface SocialMediaLinks {
   tiktok?: string;
 }
 
-export interface VerificationDocument {
-  type: string;
-  url: string;
-  uploadedAt: string;
-}
-
 export interface MerchantProfile extends BaseProfile {
   businessName: string;
-  description?: string | null;
-  logoUrl?: string | null;
-  bannerUrl?: string | null;
-  contactEmail?: string | null;
-  contactPhone?: string | null;
-
-  
-  businessAddress?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  websiteUrl?: string | null;
+  description?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  businessAddress?: string;
+  latitude?: number;
+  longitude?: number;
+  websiteUrl?: string;
   socialMedia: SocialMediaLinks;
   businessCategories: string[];
   servicesOffered: BusinessService[];
+  businessHours: BusinessHours[];
+  isProfileComplete: boolean;
+
+  // Read-only — confirmed NO endpoint modifies any of these four
+  // (BACKEND_INTEGRATION_GUIDE.md §5, §10). Never PUT these.
   verificationStatus: "pending" | "verified" | "rejected";
-  verificationDocuments: VerificationDocument[];
   averageRating: number;
   totalReviews: number;
   isFeatured: boolean;
-
-  businessHours: BusinessHours[];
-  isProfileComplete: boolean;
 }

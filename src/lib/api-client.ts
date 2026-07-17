@@ -32,11 +32,15 @@ async function refreshAccessToken(): Promise<string> {
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error("No refresh token available");
 
-    // Send the refresh token to the backend to get a new access token and refresh token 
     const { data } = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, { refreshToken });
-const { accessToken, refreshToken: newRefreshToken } = data; // flat response
-    setTokens(accessToken, newRefreshToken);
-    return accessToken as string;
+    // AuthResponseDto is nested under the standard envelope — NOT flat.
+    const auth = data.data as { accessToken: string; refreshToken: string };
+    // Token rotation (BACKEND_INTEGRATION_GUIDE.md §2): the OLD refresh
+    // token is revoked the instant this call succeeds. Both must be
+    // overwritten, or the next refresh attempt reuses a dead token and
+    // gets a hard 401 with no recovery path.
+    setTokens(auth.accessToken, auth.refreshToken);
+    return auth.accessToken;
   })();
 
   try {
@@ -70,17 +74,15 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 429) {
-      const retryAfter = error.response.headers["retry-after"];
-      const message = retryAfter
-        ? `Too many attempts. Please try again in ${retryAfter} seconds.`
-        : "Too many attempts. Please try again shortly.";
+  const retryAfter = error.response.headers["retry-after"];
+  if (retryAfter) {
+    error.response.data = error.response.data || {};
+    error.response.data.message = `Too many attempts. Please try again in ${retryAfter} seconds.`;
+  }
+  
+  return Promise.reject(error);
+}
 
-      // Override the error message so UI can simply show it
-      error.response.data = error.response.data || {};
-      error.response.data.message = message;
-      return Promise.reject(error);
-    }
 
-    return Promise.reject(error);
   },
 );

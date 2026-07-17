@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { apiClient } from "@/lib/api-client";
+import type { ApiEnvelope } from "@/lib/api-response"; 
+
 
 export type UploadType = "avatar" | "logo" | "banner" | "document";
 
@@ -38,12 +40,12 @@ export function useImageUpload() {
     setProgress(0);
 
     try {
-      const { data } = await apiClient.post<PresignResponse>("/uploads/presign", {
-        filename: file.name,
-        contentType: file.type,
-        uploadType,
-      });
-      const { uploadUrl, fileUrl } = data;
+      const { data } = await apiClient.post<ApiEnvelope<PresignResponse>>("/uploads/presign", {
+  filename: file.name,
+  contentType: file.type,
+  uploadType,
+});
+const { uploadUrl, fileUrl } = data.data;
 
       // Plain XMLHttpRequest (not fetch/apiClient) specifically for
       // upload-progress events — fetch has no upload-progress API.
