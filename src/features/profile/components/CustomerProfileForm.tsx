@@ -50,7 +50,7 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         </div>
         <div>
           <label className="text-sm font-medium text-muted-foreground">Phone</label>
-          <p className="text-sm text-foreground">{authUser?.phoneNumber || "—"}</p>
+          <p className="text-sm text-foreground">{authUser?.phone || "—"}</p>
         </div>
       </div>
 

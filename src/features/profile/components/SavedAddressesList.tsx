@@ -55,7 +55,7 @@ export function SavedAddressesList() {
             isSaving={isMutating}
             onCancel={() => setEditingId(null)}
             onSubmit={async (values) => {
-              const ok = await updateAddress(address.id, toRequest(values, address));
+              const ok = await updateAddress({ id: address.id, ...toRequest(values, address) });
               if (ok) setEditingId(null);
             }}
           />

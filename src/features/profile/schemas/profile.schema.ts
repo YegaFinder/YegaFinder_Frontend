@@ -7,3 +7,10 @@ export const profileSchema = z.object({
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
+
+export const savedAddressSchema = z.object({
+  label: z.string().min(1, "Label is required"),
+  address: z.string().min(1, "Address is required"),
+});
+
+export type SavedAddressFormValues = z.infer<typeof savedAddressSchema>;

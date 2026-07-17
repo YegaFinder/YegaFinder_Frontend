@@ -29,7 +29,7 @@ export function NotificationPreferences({ preferences }: NotificationPreferences
           <span className="text-sm text-foreground">{label}</span>
           <Switch
             checked={preferences[key] ?? false}
-            onCheckedChange={(checked) => handleToggle(key, checked)}
+            onCheckedChange={(checked: boolean) => handleToggle(key, checked)}
             disabled={isSaving}
           />
         </div>

@@ -6,6 +6,7 @@ import type {
   UpdateNotificationPreferencesRequest,
   CreateSavedAddressRequest,
   UpdateSavedAddressRequest,
+  SavedAddress,
 } from "../types/profile.types";
 
 export const profileApi = {

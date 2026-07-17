@@ -28,7 +28,7 @@ export function useSavedAddresses() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await profileApi.listSavedAddresses();
+      const data = await profileApi.getSavedAddresses();
       setAddresses(data);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -56,10 +56,10 @@ export function useSavedAddresses() {
     }
   }
 
-  async function updateAddress(id: string, payload: UpdateSavedAddressRequest) {
+  async function updateAddress(payload: UpdateSavedAddressRequest) {
     setIsMutating(true);
     try {
-      await profileApi.updateSavedAddress(id, payload);
+      await profileApi.updateSavedAddress(payload);
       toast.success("Address updated.");
       await fetchAddresses();
       return true;
