@@ -1,4 +1,4 @@
-// This file is the senior's `main` version, with only the customer-specific
+// This is the senior's `main` version, with only the customer-specific
 // request/response types appended at the bottom.
 
 import type { User } from "@/features/auth/types/auth.types";
@@ -27,7 +27,7 @@ export interface SavedAddress {
 }
 
 export interface CustomerProfile extends BaseProfile {
-  // customer‑specific fields (none extra yet)
+  // customer‑specific fields go here (none yet)
 }
 
 export interface MerchantProfile extends BaseProfile {

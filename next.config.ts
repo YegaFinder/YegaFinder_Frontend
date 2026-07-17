@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://cdn.yegnafinder.com https://yegnafinder-storage.s3.amazonaws.com; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://api.yegnafinder.com;`,
+            value: `default-src 'self'; script-src ${scriptSrc} https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://cdn.yegnafinder.com https://yegnafinder-storage.s3.amazonaws.com; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://api.yegnafinder.com https://*.onrender.com https://*.vercel.live wss://*.vercel.live; frame-src 'self' https://vercel.live;`,
           },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
