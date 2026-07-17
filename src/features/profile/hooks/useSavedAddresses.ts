@@ -1,52 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { profileApi } from "../api/profile.api";
+import { useCustomerProfile } from "./useCustomerProfile";
 import { getErrorMessage } from "@/lib/errors";
-import type {
-  CreateSavedAddressRequest,
-  SavedAddress,
-  UpdateSavedAddressRequest,
-} from "../types/profile.types";
+import type { CreateSavedAddressRequest, SavedAddress, UpdateSavedAddressRequest } from "../types/profile.types";
 
 /**
- * Owns the saved-addresses list plus create/update/delete. Mirrors the
- * manual-state convention used elsewhere in this feature and in
- * features/auth. Mutations refetch the list on success rather than
- * hand-patching local state, since the list is small and a refetch keeps
- * this file simple and always consistent with the server.
+ * IMPORTANT: there is no `/profile/addresses` (or similar) endpoint on
+ * this backend. `savedAddresses` is just a field on the customer profile
+ * (Final-YegnaFinder-Frontend-Integration-Guide.md §5.7, §7), and PUT
+ * /profiles/customer replaces that field wholesale — it is NOT validated
+ * item-by-item (`@IsArray()` only, no `@ValidateNested()`), so a
+ * malformed address object would be accepted as-is.
+ *
+ * This hook reads the current list off the cached profile
+ * (via useCustomerProfile, same React Query cache as the rest of the
+ * feature) and PUTs back the full mutated array. IDs for new addresses
+ * are generated client-side since there's no create-a-single-address
+ * endpoint to return one.
  */
 export function useSavedAddresses() {
-  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { profile, isLoading, updateProfile } = useCustomerProfile();
   const [isMutating, setIsMutating] = useState(false);
 
-  const fetchAddresses = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await profileApi.getSavedAddresses();
-      setAddresses(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAddresses();
-  }, [fetchAddresses]);
+  const addresses = profile?.savedAddresses ?? [];
 
   async function addAddress(payload: CreateSavedAddressRequest) {
     setIsMutating(true);
     try {
-      await profileApi.createSavedAddress(payload);
+      const newAddress: SavedAddress = { id: crypto.randomUUID(), ...payload };
+      await updateProfile({ savedAddresses: [...addresses, newAddress] });
       toast.success("Address saved.");
-      await fetchAddresses();
       return true;
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -56,12 +42,12 @@ export function useSavedAddresses() {
     }
   }
 
-  async function updateAddress(payload: UpdateSavedAddressRequest) {
+  async function updateAddress({ id, ...payload }: UpdateSavedAddressRequest) {
     setIsMutating(true);
     try {
-      await profileApi.updateSavedAddress(payload);
+      const next = addresses.map((a) => (a.id === id ? { ...a, ...payload } : a));
+      await updateProfile({ savedAddresses: next });
       toast.success("Address updated.");
-      await fetchAddresses();
       return true;
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -74,9 +60,9 @@ export function useSavedAddresses() {
   async function deleteAddress(id: string) {
     setIsMutating(true);
     try {
-      await profileApi.deleteSavedAddress(id);
+      const next = addresses.filter((a) => a.id !== id);
+      await updateProfile({ savedAddresses: next });
       toast.success("Address removed.");
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
       return true;
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -89,11 +75,9 @@ export function useSavedAddresses() {
   return {
     addresses,
     isLoading,
-    error,
     isMutating,
     addAddress,
     updateAddress,
     deleteAddress,
-    refetch: fetchAddresses,
   };
 }

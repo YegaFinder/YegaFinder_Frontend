@@ -128,12 +128,26 @@ export interface UpdateBusinessHoursRequest {
 // Customer-specific request types (appended)
 // ========================================================
 
+/**
+ * Matches CreateCustomerProfileDto / UpdateCustomerProfileDto exactly
+ * (identical shape per the integration guide §5.7). PUT is a partial
+ * merge server-side (Object.assign-style) at the TOP LEVEL only — so
+ * sending `savedAddresses` or `notificationPreferences` REPLACES the
+ * whole array/object, it does not merge item-by-item. Callers that only
+ * want to change one address or one notification key must send back the
+ * full, already-mutated array/object.
+ */
 export type UpdateCustomerProfileRequest = {
   dateOfBirth?: string;
   bio?: string;
   preferredLanguage?: string;
   avatarUrl?: string;
+  notificationPreferences?: Record<string, boolean>;
+  savedAddresses?: SavedAddress[];
 };
+
+/** POST and PUT share the same DTO shape — nothing is required to create. */
+export type CreateCustomerProfileRequest = UpdateCustomerProfileRequest;
 
 export type UpdateNotificationPreferencesRequest = {
   notificationPreferences: Record<string, boolean>;
