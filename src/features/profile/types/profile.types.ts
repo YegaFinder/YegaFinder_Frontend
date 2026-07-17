@@ -1,4 +1,4 @@
-import type { User } from "@/features/auth/types/auth.types";
+﻿import type { User } from "@/features/auth/types/auth.types";
 
 export interface BaseProfile {
   id: string;
@@ -123,3 +123,27 @@ export interface UpdateBusinessHoursRequest {
     breakEndTime?: string;
   }>;
 }
+
+// ========================================================
+// Customer-specific request types (appended)
+// ========================================================
+
+export type UpdateCustomerProfileRequest = {
+  dateOfBirth?: string;
+  bio?: string;
+  preferredLanguage?: string;
+  avatarUrl?: string;
+};
+
+export type UpdateNotificationPreferencesRequest = {
+  notificationPreferences: Record<string, boolean>;
+};
+
+export type CreateSavedAddressRequest = {
+  label: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+};
+
+export type UpdateSavedAddressRequest = CreateSavedAddressRequest & { id: string };
