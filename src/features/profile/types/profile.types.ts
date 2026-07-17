@@ -21,7 +21,9 @@ export interface CustomerProfile extends BaseProfile {
   dateOfBirth?: string;
   bio?: string;
   preferredLanguage: string;
-  notificationPreferences: Record<string, boolean>;
+  // Can be absent (null/undefined) on the backend for a profile that has
+  // never had a preference explicitly saved yet — do not assume present.
+  notificationPreferences?: Record<string, boolean> | null;
   savedAddresses: SavedAddress[];
   loyaltyPoints: number;
   isProfileComplete: boolean;

@@ -43,7 +43,20 @@ export function useMerchantProfile() {
       await invalidate();
       toast.success("Business profile created.");
     },
-    onError: (error) => {
+    onError: async (error) => {
+      // Same as the customer flow: the backend has been observed to
+      // commit the create and still respond with an error (a stray 500
+      // right after the insert, or a genuine 409 because an earlier
+      // attempt already went through). Check whether the profile exists
+      // now before treating this as a real failure.
+      try {
+        const existingProfile = await merchantProfileApi.getProfile();
+        queryClient.setQueryData(MERCHANT_PROFILE_QUERY_KEY, existingProfile);
+        toast.success("Business profile created.");
+        return;
+      } catch {
+        // Genuinely wasn't created — fall through to the real error below.
+      }
       toast.error(getErrorMessage(error, { 409: "A merchant profile already exists for this account." }));
     },
   });

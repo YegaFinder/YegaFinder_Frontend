@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { useUpdateNotificationPreferences } from "../hooks/useCustomerProfile";
 
 interface NotificationPreferencesProps {
-  preferences: Record<string, boolean>;
+  preferences: Record<string, boolean> | null | undefined;
 }
 
 const PREFERENCE_LABELS: Record<string, string> = {
@@ -17,8 +17,14 @@ const PREFERENCE_LABELS: Record<string, string> = {
 export function NotificationPreferences({ preferences }: NotificationPreferencesProps) {
   const { updatePreferences, isSaving } = useUpdateNotificationPreferences();
 
+  // The backend can return a profile with notificationPreferences unset
+  // (null/undefined) — e.g. right after profile creation, before any
+  // toggle has ever been saved. Fall back to {} so this renders instead
+  // of throwing "Cannot read properties of undefined" on first load.
+  const safePreferences = preferences ?? {};
+
   const handleToggle = (key: string, checked: boolean) => {
-    const newPrefs = { ...preferences, [key]: checked };
+    const newPrefs = { ...safePreferences, [key]: checked };
     updatePreferences({ notificationPreferences: newPrefs });
   };
 
@@ -28,7 +34,7 @@ export function NotificationPreferences({ preferences }: NotificationPreferences
         <div key={key} className="flex items-center justify-between">
           <span className="text-sm text-foreground">{label}</span>
           <Switch
-            checked={preferences[key] ?? false}
+            checked={safePreferences[key] ?? false}
             onCheckedChange={(checked: boolean) => handleToggle(key, checked)}
             disabled={isSaving}
           />

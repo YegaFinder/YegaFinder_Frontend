@@ -43,7 +43,21 @@ export function useCustomerProfile() {
       await invalidate();
       toast.success("Profile created.");
     },
-    onError: (error) => {
+    onError: async (error) => {
+      // The backend has been observed to commit the create and still
+      // respond with an error (a stray 500 right after the insert, or a
+      // genuine 409 because an earlier attempt already went through).
+      // Rather than trust the error response blindly, check whether a
+      // profile exists now — if it does, this is actually a success, so
+      // the user shouldn't have to reload or hit "Create" twice.
+      try {
+        const existingProfile = await profileApi.getProfile();
+        queryClient.setQueryData(CUSTOMER_PROFILE_QUERY_KEY, existingProfile);
+        toast.success("Profile created.");
+        return;
+      } catch {
+        // Genuinely wasn't created — fall through to the real error below.
+      }
       toast.error(getErrorMessage(error, { 409: "A profile already exists for this account." }));
     },
   });
