@@ -31,7 +31,17 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
   });
 
   const onSubmit = async (data: ProfileFormValues) => {
-    await updateProfile(data);
+    // The backend's dateOfBirth is @IsOptional() @IsDateString() —
+    // @IsOptional() only skips validation for `undefined`, not "". Left
+    // untouched, this field defaults to "" (see defaultValues above),
+    // which @IsDateString() then rejects as an invalid date -> 400 on
+    // every save where the user didn't set a birth date. Omit it (and
+    // any other empty-string field) entirely instead of sending "".
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== ""),
+    ) as ProfileFormValues;
+
+    await updateProfile(payload);
   };
 
   return (
