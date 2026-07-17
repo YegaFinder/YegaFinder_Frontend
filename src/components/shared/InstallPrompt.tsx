@@ -74,7 +74,12 @@ export default function InstallPrompt() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-2xl border border-border bg-background shadow-lg p-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4">
+    // bottom-20 clears the fixed mobile bottom nav (56px + safe-area) on
+    // logged-in pages; on logged-out pages (login, register, etc.) there's
+    // no bottom nav, so this just floats a bit higher than before — a
+    // harmless tradeoff for not needing route-awareness here. md:bottom-4
+    // restores the original position once the bottom nav stops rendering.
+    <div className="fixed bottom-20 md:bottom-4 left-4 right-4 z-40 mx-auto max-w-md rounded-2xl border border-border bg-background shadow-lg p-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4">
       <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0B5C8E]/10">
         <Download className="h-5 w-5 text-[#0B5C8E]" />
       </div>

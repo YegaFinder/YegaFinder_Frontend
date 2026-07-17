@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/app-header";
+import { MobileBottomNav } from "@/components/shared/mobile-bottom-nav";
 import { useRoleGuard } from "@/lib/hooks/useRoleGuard";
 
 export default function MerchantLayout({ children }: { children: React.ReactNode }) {
@@ -11,9 +12,10 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
   return (
     <div className="min-h-screen flex flex-col bg-muted/20">
       <AppHeader role="Merchant" />
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0">
         <div className="container max-w-5xl mx-auto px-4 py-8">{children}</div>
       </main>
+      <MobileBottomNav role="Merchant" />
     </div>
   );
 }
