@@ -3,8 +3,16 @@ import { getAccessToken, getRefreshToken, setTokens, removeTokens } from "./auth
 import { useAuthStore } from "@/store/auth-store";
 import { env } from "./env";
 
+const getBaseUrl = () => {
+  let url = env.NEXT_PUBLIC_API_URL;
+  if (url && !url.endsWith("/api/v1")) {
+    url = url.replace(/\/$/, "") + "/api/v1";
+  }
+  return url;
+};
+
 export const apiClient = axios.create({
-  baseURL: env.NEXT_PUBLIC_API_URL,
+  baseURL: getBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },
