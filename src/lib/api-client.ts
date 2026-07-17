@@ -82,15 +82,19 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 429) {
-  const retryAfter = error.response.headers["retry-after"];
-  if (retryAfter) {
-    error.response.data = error.response.data || {};
-    error.response.data.message = `Too many attempts. Please try again in ${retryAfter} seconds.`;
-  }
-  
-  return Promise.reject(error);
-}
+      const retryAfter = error.response.headers["retry-after"];
+      if (retryAfter) {
+        error.response.data = error.response.data || {};
+        error.response.data.message = `Too many attempts. Please try again in ${retryAfter} seconds.`;
+      }
 
+      return Promise.reject(error);
+    }
 
+    // Anything not specifically handled above (404, 500, network errors, etc.)
+    // must still be rejected, or axios treats the interceptor's implicit
+    // `undefined` return as a *successful* response and callers blow up
+    // trying to destructure `.data` off of it.
+    return Promise.reject(error);
   },
 );
