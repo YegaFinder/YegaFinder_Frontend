@@ -41,19 +41,21 @@ export default function MerchantProfilePage() {
   }
 
   async function handleSaveContact(values: ContactInfoFormValues) {
-    try {
-      await updateProfile({
-        // contactEmail is @IsEmail() even though optional — "" fails
-        // that check, so an empty field must be sent as undefined.
-        contactEmail: values.contactEmail || undefined,
-        contactPhone: values.contactPhone,
-        businessAddress: values.businessAddress,
-        websiteUrl: values.websiteUrl,
-      });
-    } catch {
-      // Error toast already shown by the mutation's onError handler.
-    }
+  if (!profile) return;
+  try {
+    await updateProfile({
+      // Backend requires businessName on EVERY PUT /profiles/merchant call,
+      // not just create — omitting it here is what was causing the 400.
+      businessName: profile.businessName,
+      contactEmail: values.contactEmail || undefined,
+      contactPhone: values.contactPhone,
+      businessAddress: values.businessAddress,
+      websiteUrl: values.websiteUrl,
+    });
+  } catch {
+    // Error toast already shown by the mutation's onError handler.
   }
+}
 
   async function handleSaveHours(values: BusinessHoursFormValues) {
     try {

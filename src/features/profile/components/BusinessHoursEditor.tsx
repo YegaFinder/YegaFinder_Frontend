@@ -48,16 +48,24 @@ export function BusinessHoursEditor({ businessHours, onSubmit, isSaving, disable
   );
 
   useEffect(() => {
-    const defaults = buildDefaultBusinessHours(businessHours);
-    reset({ businessHours: defaults });
-    setBreaksShown(defaults.map((d) => !!(d.breakStartTime || d.breakEndTime)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessHours]);
+  if (isDirty) return; // don't let an unrelated background refetch wipe an unsaved edit
+  const defaults = buildDefaultBusinessHours(businessHours);
+  reset({ businessHours: defaults });
+  setBreaksShown(defaults.map((d) => !!(d.breakStartTime || d.breakEndTime)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [businessHours, isDirty]);
 
   const days = watch("businessHours");
 
   return (
-    <form onSubmit={handleSubmit((values) => onSubmit(values))} className="space-y-4" noValidate>
+    <form
+  onSubmit={handleSubmit(async (values) => {
+    await onSubmit(values);
+    reset(values); // clear dirty state immediately using what we just saved
+  })}
+  className="space-y-4"
+  noValidate
+>
       {disabled && (
         <p className="text-sm text-muted-foreground">
           Save your business details first — operating hours can be set once your profile exists.

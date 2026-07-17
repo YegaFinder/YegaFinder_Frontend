@@ -35,18 +35,25 @@ export function ContactInfoForm({ profile, onSubmit, isSaving, disabled }: Conta
     },
   });
 
-  useEffect(() => {
-    if (!profile) return;
-    reset({
-      contactEmail: profile.contactEmail ?? "",
-      contactPhone: profile.contactPhone ?? "",
-      businessAddress: profile.businessAddress ?? "",
-      websiteUrl: profile.websiteUrl ?? "",
-    });
-  }, [profile, reset]);
+ useEffect(() => {
+  if (!profile || isDirty) return;
+  reset({
+    contactEmail: profile.contactEmail ?? "",
+    contactPhone: profile.contactPhone ?? "",
+    businessAddress: profile.businessAddress ?? "",
+    websiteUrl: profile.websiteUrl ?? "",
+  });
+}, [profile, reset, isDirty]);
 
   return (
-    <form onSubmit={handleSubmit((values) => onSubmit(values))} className="space-y-5" noValidate>
+            <form
+          onSubmit={handleSubmit(async (values) => {
+            await onSubmit(values);
+            reset(values);
+          })}
+          className="space-y-5"
+          noValidate
+        >
       {disabled && (
         <p className="text-sm text-muted-foreground">
           Save your business details first — contact info can be added once your profile exists.
