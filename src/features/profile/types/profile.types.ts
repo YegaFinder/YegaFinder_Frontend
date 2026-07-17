@@ -83,3 +83,43 @@ export interface MerchantProfile extends BaseProfile {
   totalReviews: number;
   isFeatured: boolean;
 }
+
+
+/**
+ * Payload shapes for the two merchant-profile write endpoints.
+ * Deliberately restricted to fields that actually exist on
+ * CreateMerchantProfileDto / UpdateMerchantProfileDto — the global
+ * ValidationPipe has forbidNonWhitelisted:true, so any extra key
+ * (e.g. accidentally including verificationStatus) 400s the whole
+ * request (BACKEND_INTEGRATION_GUIDE.md §1, §5.8).
+ */
+export interface UpdateMerchantProfileRequest {
+  businessName?: string;
+  description?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  businessAddress?: string;
+  websiteUrl?: string;
+  businessCategories?: string[];
+}
+
+/** businessName is the ONLY required field on create (§5.8). */
+export type CreateMerchantProfileRequest = UpdateMerchantProfileRequest & { businessName: string };
+
+/**
+ * PUT /profiles/merchant/business-hours is a full delete-and-recreate
+ * (§5.9) — always send all 7 days, never a partial list.
+ */
+export interface UpdateBusinessHoursRequest {
+  businessHours: Array<{
+    dayOfWeek: DayOfWeek;
+    isClosed: boolean;
+    is24Hours: boolean;
+    openTime?: string;
+    closeTime?: string;
+    breakStartTime?: string;
+    breakEndTime?: string;
+  }>;
+}
