@@ -18,9 +18,12 @@ import { useAuthStore } from "@/store/auth-store";
  */
 export function DevOtpBanner({ onUse }: { onUse?: (otp: string) => void }) {
   const devOtp = useAuthStore((state) => state.devOtp);
-  const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === "true";
 
-  if (!devOtp || !isTestMode) return null;
+  // The backend is the source of truth: it only returns an OTP in the response
+  // body when TEST_MODE=true. Show the banner whenever it does so — regardless
+  // of the NEXT_PUBLIC_TEST_MODE build-time flag, which may differ from the
+  // backend's runtime config.
+  if (!devOtp) return null;
 
   return (
     <div className="rounded-[14px] border border-dashed border-yegna-primary/40 bg-yegna-primary/5 px-4 py-3">
