@@ -8,7 +8,7 @@ import { NotificationPreferences } from "@/features/profile/components/Notificat
 import { Spinner } from "@/components/shared/form-feedback";
 
 export default function ProfilePage() {
-  const { profile, isLoading, error } = useCustomerProfile();
+  const { profile, isLoading, error, refetch } = useCustomerProfile();
 
   if (isLoading) {
     return (
@@ -41,7 +41,7 @@ export default function ProfilePage() {
 
       <section className="space-y-4 rounded-[16px] border border-yegna-border bg-background p-5">
         <h2 className="text-sm font-semibold text-foreground">Photo</h2>
-        <ProfileAvatar profile={profile} />
+        <ProfileAvatar profile={profile} onProfileUpdated={refetch} />
       </section>
 
       <section className="space-y-4 rounded-[16px] border border-yegna-border bg-background p-5">

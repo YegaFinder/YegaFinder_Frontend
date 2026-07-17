@@ -7,6 +7,8 @@ import type { CustomerProfile } from "../types/profile.types";
 
 interface ProfileAvatarProps {
   profile: CustomerProfile;
+  /** Called with the freshly-updated profile after a successful upload — wire this to the page's `refetch` (or just re-set local state) so the new avatar shows up without a full reload. */
+  onProfileUpdated: (profile: CustomerProfile) => void;
 }
 
 /**
@@ -16,8 +18,8 @@ interface ProfileAvatarProps {
  * Initials come from the auth store's `User` since name isn't part of
  * `CustomerProfile` — see CustomerProfileForm.tsx's docblock.
  */
-export function ProfileAvatar({ profile }: ProfileAvatarProps) {
-  const { updateAvatar, isSaving } = useUpdateAvatar();
+export function ProfileAvatar({ profile, onProfileUpdated }: ProfileAvatarProps) {
+  const { updateAvatar, isSaving } = useUpdateAvatar(onProfileUpdated);
   const authUser = useAuthStore((state) => state.user);
   const initials = `${authUser?.firstName?.[0] ?? ""}${authUser?.lastName?.[0] ?? ""}`.toUpperCase();
 

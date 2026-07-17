@@ -1,9 +1,11 @@
+"use client";
+
 export default function FavoritesPage() {
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center gap-2 p-8 text-center">
-      <h1 className="text-xl font-semibold text-foreground">Favorites</h1>
-      <p className="text-sm text-muted-foreground">
-        Saving your favorite businesses is coming in a future sprint.
+    <div className="mx-auto max-w-2xl p-6 sm:p-8">
+      <h1 className="text-2xl font-semibold text-foreground">Your favorites</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Places you have liked – coming soon.
       </p>
     </div>
   );

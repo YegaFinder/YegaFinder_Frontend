@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { profileApi } from "../api/profile.api";
-import { useAuthStore } from "@/store/auth-store";
 import { getErrorMessage } from "@/lib/errors";
 import type {
   CustomerProfile,
@@ -78,24 +77,24 @@ export function useUpdateProfile(onSuccess?: (profile: CustomerProfile) => void)
 /**
  * Updates the avatar via the same PATCH /profile/me used for the rest of
  * the profile (see profileApi.updateProfile's docblock) — there's no
- * separate avatar endpoint in the confirmed contract. Syncs the new
- * avatarUrl into the auth store since AppHeader and other chrome read
- * `user` from there rather than re-fetching the profile.
+ * separate avatar endpoint in the confirmed contract.
+ *
+ * `avatarUrl` lives on `CustomerProfile`, not on auth's `User`
+ * (features/auth/types/auth.types.ts has no `avatarUrl` field), so there's
+ * nothing to sync into the auth store here — AppHeader doesn't render an
+ * avatar today. `onSuccess` is required and is how the caller (e.g.
+ * ProfilePage passing its own `refetch`) gets the updated profile back
+ * into view without a full reload.
  */
-export function useUpdateAvatar(onSuccess?: (profile: CustomerProfile) => void) {
+export function useUpdateAvatar(onSuccess: (profile: CustomerProfile) => void) {
   const [isSaving, setIsSaving] = useState(false);
-  const authUser = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
 
   async function updateAvatar(avatarUrl: string) {
     setIsSaving(true);
     try {
       const updated = await profileApi.updateProfile({ avatarUrl });
-      if (authUser) {
-        setUser({ ...authUser, avatarUrl: updated.avatarUrl ?? undefined });
-      }
       toast.success("Profile photo updated.");
-      onSuccess?.(updated);
+      onSuccess(updated);
       return updated;
     } catch (err) {
       toast.error(getErrorMessage(err));
