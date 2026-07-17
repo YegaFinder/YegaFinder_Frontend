@@ -59,12 +59,37 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 /* ---- Response interceptor: silently refresh on a 401, retry once ---- */
+// Endpoints where a 401 means "bad credentials / bad OTP / no valid
+// refresh token to begin with" — NOT "access token expired." Hitting
+// the refresh-and-retry flow here is always wrong: there's no session
+// to refresh yet, so it immediately fails, wipes storage, and hard-
+// redirects to /login — which is exactly what happens if this list is
+// missing and someone just types the wrong password.
+const AUTH_ENDPOINTS_EXCLUDED_FROM_REFRESH = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/verify-otp",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/resend-verification",
+];
+
+function isAuthEndpoint(url?: string): boolean {
+  if (!url) return false;
+  return AUTH_ENDPOINTS_EXCLUDED_FROM_REFRESH.some((path) => url.includes(path));
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       originalRequest._retry = true;
 
       try {
