@@ -28,18 +28,30 @@ export const merchantProfileApi = {
 
   /**
    * Full delete-and-recreate (§5.9) — always send all 7 days.
-   * This controller does NOT go through the ok() helper, so the §3
-   * envelope bug fires unconditionally here: the real payload is
-   * `{ success, businessHours }`, and because it has no `message`/`data`
-   * keys of its own, the outer TransformInterceptor's `??` fallback
-   * re-substitutes that whole object as `data`. Net result: the array
-   * lives two levels deep — response.data.data.businessHours.
+   *
+   * TEMPORARY WORKAROUND for a backend envelope bug (see backend review
+   * action item #2): this controller returns `{ success, businessHours }`
+   * instead of `{ data: { businessHours } }`, and because that payload
+   * has no `message`/`data` keys of its own, TransformInterceptor's `??`
+   * fallback re-substitutes the whole object as `data`. Net result: the
+   * array currently lives two levels deep — response.data.data.businessHours
+   * — instead of response.data.data like every other endpoint.
+   *
+   * This unwrap checks BOTH shapes, so the frontend keeps working the
+   * instant the backend fix ships with no further frontend change
+   * needed. Once fixed, `inner` will already be `BusinessHours[]`
+   * directly and the `"businessHours" in inner` branch simply stops
+   * being hit — safe to delete then, but harmless to leave.
    */
   updateBusinessHours: async (payload: UpdateBusinessHoursRequest): Promise<BusinessHours[]> => {
-    const { data } = await apiClient.put<ApiEnvelope<{ success: boolean; businessHours: BusinessHours[] }>>(
-      "/profiles/merchant/business-hours",
-      payload,
-    );
-    return data.data.businessHours;
+    const { data } = await apiClient.put<
+      ApiEnvelope<BusinessHours[] | { success: boolean; businessHours: BusinessHours[] }>
+    >("/profiles/merchant/business-hours", payload);
+
+    const inner = data.data;
+    if (inner && typeof inner === "object" && !Array.isArray(inner) && "businessHours" in inner) {
+      return inner.businessHours;
+    }
+    return inner as BusinessHours[];
   },
 };

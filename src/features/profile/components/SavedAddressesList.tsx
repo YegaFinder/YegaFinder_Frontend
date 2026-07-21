@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Pencil, Trash2, LocateFixed, CircleCheck } from "lucide-react";
 
 import { savedAddressSchema, type SavedAddressFormValues } from "../schemas/profile.schema";
 import { useSavedAddresses } from "../hooks/useSavedAddresses";
+import { geocodeAddress, type GeocodeResult } from "@/lib/geocode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,14 +23,16 @@ const EMPTY_FORM: SavedAddressFormValues = {
  * `SavedAddress` on main is `{ id, label, address, latitude, longitude }`
  * — a single free-text address line, no addressLine1/2/city/region, and
  * no `isDefault` flag (so the "Default" badge/selection this list had
- * before is dropped for now — there's nowhere to persist it). latitude/
- * longitude are required, non-null numbers on the response type, but
- * there's no map picker here to collect real coordinates from a typed
- * address, so new addresses are submitted with 0/0 placeholders until
- * there's either a map picker or the backend geocodes the address
- * server-side. Flag this for the backend/product conversation before
- * relying on saved-address coordinates anywhere (e.g. "nearest to me"
- * sorting).
+ * before is dropped for now — there's nowhere to persist it).
+ *
+ * latitude/longitude are required, non-null numbers on the response
+ * type. Previously this form submitted `0/0` placeholders since there
+ * was no way to collect real coordinates from a typed address. That's
+ * fixed here: `AddressForm` now runs the typed address through
+ * `geocodeAddress` (OpenStreetMap Nominatim, see src/lib/geocode.ts)
+ * before allowing a save, and re-requires a fresh lookup if the address
+ * text changes after coordinates were found — so stale/mismatched
+ * coordinates never get silently submitted.
  */
 export function SavedAddressesList() {
   const { addresses, isLoading, isMutating, addAddress, updateAddress, deleteAddress } =
@@ -52,10 +55,15 @@ export function SavedAddressesList() {
           <AddressForm
             key={address.id}
             initialValues={toFormValues(address)}
+            initialCoords={{
+              latitude: address.latitude,
+              longitude: address.longitude,
+              displayName: address.address,
+            }}
             isSaving={isMutating}
             onCancel={() => setEditingId(null)}
-            onSubmit={async (values) => {
-              const ok = await updateAddress({ id: address.id, ...toRequest(values, address) });
+            onSubmit={async (values, coords) => {
+              const ok = await updateAddress({ id: address.id, ...toRequest(values, coords) });
               if (ok) setEditingId(null);
             }}
           />
@@ -98,10 +106,11 @@ export function SavedAddressesList() {
       {isAdding ? (
         <AddressForm
           initialValues={EMPTY_FORM}
+          initialCoords={null}
           isSaving={isMutating}
           onCancel={() => setIsAdding(false)}
-          onSubmit={async (values) => {
-            const ok = await addAddress(toRequest(values));
+          onSubmit={async (values, coords) => {
+            const ok = await addAddress(toRequest(values, coords));
             if (ok) setIsAdding(false);
           }}
         />
@@ -121,36 +130,85 @@ function toFormValues(address: SavedAddress): SavedAddressFormValues {
   };
 }
 
-/** Preserves existing lat/lng on edit; defaults to 0/0 for a brand-new address — see this file's top docblock. */
-function toRequest(values: SavedAddressFormValues, existing?: SavedAddress) {
+/** Coordinates now always come from a confirmed geocode lookup — see AddressForm below. */
+function toRequest(values: SavedAddressFormValues, coords: GeocodeResult) {
   return {
     label: values.label,
     address: values.address,
-    latitude: existing?.latitude ?? 0,
-    longitude: existing?.longitude ?? 0,
+    latitude: coords.latitude,
+    longitude: coords.longitude,
   };
 }
 
 interface AddressFormProps {
   initialValues: SavedAddressFormValues;
+  /** Existing coordinates when editing an unchanged address; null for a brand-new one. */
+  initialCoords: GeocodeResult | null;
   isSaving: boolean;
   onCancel: () => void;
-  onSubmit: (values: SavedAddressFormValues) => Promise<void>;
+  onSubmit: (values: SavedAddressFormValues, coords: GeocodeResult) => Promise<void>;
 }
 
-function AddressForm({ initialValues, isSaving, onCancel, onSubmit }: AddressFormProps) {
+function AddressForm({ initialValues, initialCoords, isSaving, onCancel, onSubmit }: AddressFormProps) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SavedAddressFormValues>({
     resolver: zodResolver(savedAddressSchema),
     defaultValues: initialValues,
   });
 
+  const [coords, setCoords] = useState<GeocodeResult | null>(initialCoords);
+  // Tracks the exact address text the current `coords` were resolved for,
+  // so we can tell when the user has edited the address since the last
+  // successful lookup (or since loading an existing saved address).
+  const [coordsAddress, setCoordsAddress] = useState<string | null>(
+    initialCoords ? initialValues.address : null,
+  );
+  const [isLocating, setIsLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
+
+  const currentAddress = watch("address");
+  const coordsAreStale = coords !== null && currentAddress !== coordsAddress;
+  const hasConfirmedCoords = coords !== null && !coordsAreStale;
+
+  async function handleFindLocation() {
+    setLocateError(null);
+    if (!currentAddress?.trim()) {
+      setLocateError("Enter an address first.");
+      return;
+    }
+    setIsLocating(true);
+    try {
+      const result = await geocodeAddress(currentAddress);
+      if (!result) {
+        setLocateError("Couldn't find that address. Try adding more detail (city, area).");
+        setCoords(null);
+        setCoordsAddress(null);
+        return;
+      }
+      setCoords(result);
+      setCoordsAddress(currentAddress);
+    } catch {
+      setLocateError("Location lookup failed. Please try again.");
+    } finally {
+      setIsLocating(false);
+    }
+  }
+
+  async function handleFormSubmit(values: SavedAddressFormValues) {
+    if (!hasConfirmedCoords || !coords) {
+      setLocateError("Find the location before saving, so we can pin this address correctly.");
+      return;
+    }
+    await onSubmit(values, coords);
+  }
+
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(handleFormSubmit)}
       className="space-y-4 rounded-[14px] border border-yegna-border bg-yegna-background p-4"
       noValidate
     >
@@ -162,8 +220,34 @@ function AddressForm({ initialValues, isSaving, onCancel, onSubmit }: AddressFor
 
       <div className="space-y-1.5">
         <Label htmlFor="address">Address</Label>
-        <Input id="address" aria-invalid={!!errors.address} {...register("address")} />
+        <div className="flex gap-2">
+          <Input id="address" aria-invalid={!!errors.address} {...register("address")} />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            disabled={isLocating}
+            onClick={handleFindLocation}
+          >
+            {isLocating ? <Spinner /> : <LocateFixed className="size-4" />}
+            Find location
+          </Button>
+        </div>
         <FieldError message={errors.address?.message} />
+
+        {hasConfirmedCoords && (
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+            <CircleCheck className="mt-0.5 size-3.5 shrink-0 text-yegna-primary" />
+            Location confirmed: {coords!.displayName}
+          </p>
+        )}
+        {coordsAreStale && (
+          <p className="text-xs text-muted-foreground">
+            Address changed — find the location again before saving.
+          </p>
+        )}
+        {locateError && <p className="text-xs text-destructive">{locateError}</p>}
       </div>
 
       <div className="flex gap-2">
