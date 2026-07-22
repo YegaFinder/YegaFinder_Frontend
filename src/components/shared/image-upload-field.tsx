@@ -9,10 +9,16 @@ import { Button } from "@/components/ui/button";
 
 interface ImageUploadFieldProps {
   label: string;
-  /** Which presign bucket/validation rule this upload uses — required
-   * now that the real /uploads/presign contract needs it. */
+  /** Which presign bucket/validation rule this upload uses. */
   uploadType: UploadType;
   accept?: string;
+  /**
+   * The already-saved URL for this field (e.g. profile.logoUrl). Shown
+   * whenever there's no fresher local preview — without this, a saved
+   * image simply disappears the moment the component remounts (e.g.
+   * after a page refresh), because `preview` is purely local state.
+   */
+  value?: string;
   onUploadSuccess: (url: string) => void;
   onRemove?: () => void;
   aspectRatio?: "square" | "video" | "auto";
@@ -22,6 +28,7 @@ export function ImageUploadField({
   label,
   uploadType,
   accept,
+  value,
   onUploadSuccess,
   onRemove,
   aspectRatio = "auto",
@@ -32,6 +39,9 @@ export function ImageUploadField({
   const inputId = useId();
 
   const resolvedAccept = accept ?? ALLOWED_FILE_TYPES[uploadType].join(", ");
+  // A fresh local pick always wins; otherwise fall back to whatever is
+  // already saved on the server.
+  const displaySrc = preview ?? value ?? null;
 
   useEffect(() => {
     return () => {
@@ -43,9 +53,6 @@ export function ImageUploadField({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Fast client-side pre-check using the SAME constants the hook
-    // itself enforces (imported, not re-declared) — just avoids a round
-    // trip to /uploads/presign for an obviously-invalid file.
     if (file.size > MAX_FILE_SIZE) {
       toast.error("File is too large. Max size is 10MB.");
       return;
@@ -55,8 +62,6 @@ export function ImageUploadField({
       return;
     }
 
-    // Show the picked image immediately (with the progress bar over it)
-    // instead of waiting for the upload to finish.
     const localPreview = URL.createObjectURL(file);
     setPreview((old) => {
       if (old) URL.revokeObjectURL(old);
@@ -96,9 +101,9 @@ export function ImageUploadField({
               : "h-32 w-full"
         }`}
       >
-        {preview ? (
+        {displaySrc ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+          <img src={displaySrc} alt={`${label} preview`} className="w-full h-full object-cover rounded-lg" />
         ) : (
           <div className="text-center p-4">
             <span className="text-sm text-muted-foreground">Click to upload</span>
@@ -117,13 +122,10 @@ export function ImageUploadField({
       </div>
       {isUploading && (
         <div className="w-full bg-secondary h-1 rounded-full overflow-hidden mt-2">
-          <div
-            className="bg-primary h-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="bg-primary h-full transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
       )}
-      {preview && !isUploading && (
+      {displaySrc && !isUploading && (
         <Button type="button" variant="ghost" size="sm" onClick={handleRemove} className="w-fit gap-1.5 text-muted-foreground">
           <X className="size-3.5" />
           Remove
