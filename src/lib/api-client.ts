@@ -93,21 +93,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-<<<<<<< HEAD
         const accessToken = await refreshAccessToken();
-=======
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) throw new Error("No refresh token available");
-
-        const { data } = await axios.post(
-          `${apiClient.defaults.baseURL}/auth/refresh`,
-          { refreshToken },
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } = data.data;
-        setTokens(accessToken, newRefreshToken);
-
->>>>>>> eb2abcbcc224d64603c1eb881a8af2b98fb2b790
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
