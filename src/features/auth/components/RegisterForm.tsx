@@ -29,6 +29,7 @@ export function RegisterForm() {
       password: "",
       confirmPassword: "",
       role: "Customer",
+      agreedToTerms: false as unknown as true,
     },
   });
 
@@ -39,6 +40,7 @@ export function RegisterForm() {
       email: data.email,
       password: data.password,
       role: data.role,
+      agreedToTerms: data.agreedToTerms,
     });
   };
 
@@ -108,6 +110,22 @@ export function RegisterForm() {
         </select>
         <FieldError message={errors.role?.message} />
       </div>
+
+      <div className="flex items-start gap-2">
+        <input
+          id="agreedToTerms"
+          type="checkbox"
+          className="mt-1 h-4 w-4 rounded border-yegna-border text-yegna-primary focus:ring-yegna-primary"
+          {...register("agreedToTerms")}
+        />
+        <Label htmlFor="agreedToTerms" className="text-sm font-normal text-muted-foreground leading-snug">
+          I agree to the{" "}
+          <span className="font-medium text-yegna-primary hover:underline cursor-pointer">Terms of Service</span>{" "}
+          and{" "}
+          <span className="font-medium text-yegna-primary hover:underline cursor-pointer">Privacy Policy</span>
+        </Label>
+      </div>
+      <FieldError message={errors.agreedToTerms?.message} />
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading && <Spinner />}

@@ -35,6 +35,7 @@ export interface RegisterRequest {
   password: string;
   phone?: string;
   role: Extract<Role, "Customer" | "Merchant">;
+  agreedToTerms: boolean;
 }
 
 export interface VerifyOtpRequest {

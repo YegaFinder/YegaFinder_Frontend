@@ -18,6 +18,9 @@ export const registerSchema = z
       ),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     role: z.enum(["Customer", "Merchant"]),
+    agreedToTerms: z.literal(true, {
+      errorMap: () => ({ message: "You must accept the Terms & Privacy Policy" }),
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
