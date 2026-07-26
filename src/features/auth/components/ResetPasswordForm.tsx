@@ -18,7 +18,7 @@ import {
 import { useResetPassword } from "../hooks/useResetPassword";
 
 export function ResetPasswordForm() {
-  const { submit, isLoading, error, email } = useResetPassword();
+  const { submit, resend, isLoading, isResending, error, resendSuccess, email } = useResetPassword();
 
   const {
     register,
@@ -47,6 +47,9 @@ export function ResetPasswordForm() {
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5" noValidate>
       <FormError message={error} />
+      {resendSuccess && (
+        <p className="text-sm font-medium text-emerald-600 text-center">{resendSuccess}</p>
+      )}
 
       <p className="text-sm text-muted-foreground">
         Enter the code sent to{" "}
@@ -98,10 +101,22 @@ export function ResetPasswordForm() {
         <FieldError message={errors.confirmNewPassword?.message} />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full" disabled={isLoading || isResending}>
         {isLoading && <Spinner />}
         {isLoading ? "Resetting..." : "Reset password"}
       </Button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Didn&apos;t receive a code?{" "}
+        <button
+          type="button"
+          onClick={resend}
+          disabled={isResending || isLoading}
+          className="font-medium text-yegna-primary hover:underline disabled:opacity-50"
+        >
+          {isResending ? "Sending..." : "Resend"}
+        </button>
+      </p>
     </form>
   );
 }
