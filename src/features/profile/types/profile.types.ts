@@ -72,6 +72,9 @@ export interface MerchantProfile extends BaseProfile {
   latitude?: number;
   longitude?: number;
   websiteUrl?: string;
+  taxId?: string;
+  deliveryRadius?: number;
+  serviceAreas?: string[];
   socialMedia: SocialMediaLinks;
   businessCategories: string[];
   servicesOffered: BusinessService[];
@@ -79,21 +82,19 @@ export interface MerchantProfile extends BaseProfile {
   isProfileComplete: boolean;
 
   // Read-only — confirmed NO endpoint modifies any of these four
-  // (BACKEND_INTEGRATION_GUIDE.md §5, §10). Never PUT these.
+  // (BACKEND_API_GUIDE.md §5, §10). Never PUT these.
   verificationStatus: "pending" | "verified" | "rejected";
   averageRating: number;
   totalReviews: number;
   isFeatured: boolean;
 }
 
-
 /**
  * Payload shapes for the two merchant-profile write endpoints.
  * Deliberately restricted to fields that actually exist on
- * CreateMerchantProfileDto / UpdateMerchantProfileDto — the global
- * ValidationPipe has forbidNonWhitelisted:true, so any extra key
- * (e.g. accidentally including verificationStatus) 400s the whole
- * request (BACKEND_INTEGRATION_GUIDE.md §1, §5.8).
+ * CreateBusinessDto / UpdateBusinessDto — the global ValidationPipe has
+ * forbidNonWhitelisted:true, so any extra key 400s the whole request
+ * (BACKEND_API_GUIDE.md §1.5, §5.1).
  */
 export interface UpdateMerchantProfileRequest {
   businessName?: string;
@@ -103,11 +104,27 @@ export interface UpdateMerchantProfileRequest {
   contactEmail?: string;
   contactPhone?: string;
   businessAddress?: string;
+  latitude?: number;
+  longitude?: number;
   websiteUrl?: string;
+  taxId?: string;
+  deliveryRadius?: number;
+  serviceAreas?: string[];
+  socialMedia?: SocialMediaLinks;
+  /**
+   * ⚠️ Accepted by the DTO's validation but SILENTLY DISCARDED server-side
+   * (BACKEND_API_GUIDE.md §5.1 — destructured out and never used in
+   * profiles.service.ts). Sending it will not error, but it will never
+   * persist or come back on GET. Left here so the UI can keep sending it
+   * without a 400, and so this starts working automatically the moment
+   * the backend fixes it — don't spend time debugging your own payload
+   * for this field, it's a confirmed backend no-op.
+   */
   businessCategories?: string[];
+  servicesOffered?: BusinessService[];
 }
 
-/** businessName is the ONLY required field on create (§5.8). */
+/** businessName is the ONLY required field on create (§5.1). */
 export type CreateMerchantProfileRequest = UpdateMerchantProfileRequest & { businessName: string };
 
 /**

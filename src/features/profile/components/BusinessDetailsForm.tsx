@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export function BusinessDetailsForm({ profile, onSubmit, isSaving }: BusinessDet
       businessCategories: profile?.businessCategories ?? [],
       logoUrl: profile?.logoUrl ?? "",
       bannerUrl: profile?.bannerUrl ?? "",
+      taxId: profile?.taxId ?? "",
     },
   });
 
@@ -51,6 +53,7 @@ export function BusinessDetailsForm({ profile, onSubmit, isSaving }: BusinessDet
       businessCategories: profile.businessCategories ?? [],
       logoUrl: profile.logoUrl ?? "",
       bannerUrl: profile.bannerUrl ?? "",
+      taxId: profile.taxId ?? "",
     });
   }, [profile, reset]);
 
@@ -170,6 +173,24 @@ export function BusinessDetailsForm({ profile, onSubmit, isSaving }: BusinessDet
             ))}
           </div>
         )}
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="taxId">Tax Identification Number (optional)</Label>
+        </div>
+        <Input
+          id="taxId"
+          placeholder="e.g. TIN-0012345678"
+          aria-invalid={!!errors.taxId}
+          {...register("taxId")}
+        />
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <Info className="mt-0.5 size-3.5 shrink-0" />
+          Used for invoicing and compliance. This is stored on your business profile and is never shown
+          publicly to customers.
+        </p>
+        <FieldError message={errors.taxId?.message} />
       </div>
 
       <Button type="submit" disabled={isSaving || !isDirty}>

@@ -26,6 +26,7 @@ export const businessDetailsSchema = z.object({
   businessCategories: z.array(z.string().min(1)).optional(),
   logoUrl: z.string().optional().or(z.literal("")),
   bannerUrl: z.string().optional().or(z.literal("")),
+  taxId: z.string().max(50, "Keep it under 50 characters").optional().or(z.literal("")),
 });
 export type BusinessDetailsFormValues = z.infer<typeof businessDetailsSchema>;
 
@@ -155,3 +156,37 @@ export function toBusinessHoursPayload(
     breakEndTime: breakEndTime || undefined,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Map location (latitude/longitude — real fields on CreateBusinessDto §5.1)
+// ---------------------------------------------------------------------------
+
+export const businessLocationSchema = z.object({
+  businessAddress: z.string().optional().or(z.literal("")),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+});
+export type BusinessLocationFormValues = z.infer<typeof businessLocationSchema>;
+
+// ---------------------------------------------------------------------------
+// Reach: social links, delivery radius, service areas
+// ---------------------------------------------------------------------------
+
+const optionalUrl = z.string().url("Enter a valid URL, e.g. https://...").optional().or(z.literal(""));
+
+export const businessReachSchema = z.object({
+  deliveryRadius: z
+    .union([z.coerce.number().min(0, "Must be 0 or more").max(500, "Keep it under 500 km"), z.nan()])
+    .optional()
+    .transform((v) => (v === undefined || Number.isNaN(v) ? undefined : v)),
+  serviceAreas: z.array(z.string().min(1)).optional(),
+  socialMedia: z
+    .object({
+      facebook: optionalUrl,
+      instagram: optionalUrl,
+      twitter: optionalUrl,
+      tiktok: optionalUrl,
+    })
+    .optional(),
+});
+export type BusinessReachFormValues = z.infer<typeof businessReachSchema>;

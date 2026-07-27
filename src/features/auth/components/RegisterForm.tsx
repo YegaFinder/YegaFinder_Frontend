@@ -120,9 +120,23 @@ export function RegisterForm() {
         />
         <Label htmlFor="agreedToTerms" className="text-sm font-normal text-muted-foreground leading-snug">
           I agree to the{" "}
-          <span className="font-medium text-yegna-primary hover:underline cursor-pointer">Terms of Service</span>{" "}
+          <Link
+            href={ROUTES.TERMS}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-yegna-primary hover:underline"
+          >
+            Terms of Service
+          </Link>{" "}
           and{" "}
-          <span className="font-medium text-yegna-primary hover:underline cursor-pointer">Privacy Policy</span>
+          <Link
+            href={ROUTES.PRIVACY}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-yegna-primary hover:underline"
+          >
+            Privacy Policy
+          </Link>
         </Label>
       </div>
       <FieldError message={errors.agreedToTerms?.message} />
