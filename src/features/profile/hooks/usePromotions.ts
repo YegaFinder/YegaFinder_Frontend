@@ -8,13 +8,15 @@ import { getErrorMessage } from "@/lib/errors";
 
 export const PROMOTIONS_QUERY_KEY = ["merchant", "promotions"] as const;
 
-export function usePromotions() {
+export function usePromotions(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: PROMOTIONS_QUERY_KEY,
     queryFn: promotionsApi.list,
+    enabled: options?.enabled ?? true,
   });
+  
 
   const createMutation = useMutation({
     mutationFn: (payload: CreatePromotionRequest) => promotionsApi.create(payload),

@@ -66,8 +66,8 @@ export default function MerchantProfilePage() {
     isUpdatingHours,
   } = useMerchantProfile();
 
-  const { staff } = useTeamMembers();
-  const { promotions } = usePromotions();
+ const { staff } = useTeamMembers({ enabled: !profileNotCreatedYet });
+const { promotions } = usePromotions({ enabled: !profileNotCreatedYet });
 
   async function handleSaveDetails(values: BusinessDetailsFormValues) {
     try {
@@ -110,19 +110,22 @@ export default function MerchantProfilePage() {
     }
   }
 
-  async function handleSaveReach(values: BusinessReachFormValues) {
-    if (!profile) return;
-    try {
-      await updateProfile({
-        businessName: profile.businessName,
-        deliveryRadius: values.deliveryRadius,
-        serviceAreas: values.serviceAreas,
-        socialMedia: values.socialMedia,
-      });
-    } catch {
-      /* toast already shown */
-    }
+async function handleSaveReach(values: BusinessReachFormValues) {
+  if (!profile) return;
+  const cleanedSocial = Object.fromEntries(
+    Object.entries(values.socialMedia ?? {}).filter(([, v]) => !!v),
+  );
+  try {
+    await updateProfile({
+      businessName: profile.businessName,
+      deliveryRadius: values.deliveryRadius,
+      serviceAreas: values.serviceAreas,
+      socialMedia: Object.keys(cleanedSocial).length > 0 ? cleanedSocial : undefined,
+    });
+  } catch {
+    /* toast already shown */
   }
+}
 
   async function handleSaveHours(values: BusinessHoursFormValues) {
     try {
@@ -181,8 +184,8 @@ export default function MerchantProfilePage() {
                 </span>
               )}
               <span className="flex items-center gap-1">
-                <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                {profile?.averageRating?.toFixed(1) ?? "0.0"} ({profile?.totalReviews ?? 0} reviews)
+                <Star className="size-3.5 fill-amber-400 Number(profile?.averageRating ?? 0).toFixed(1)}text-amber-400" />
+                 {Number(profile?.averageRating ?? 0).toFixed(1)} ({profile?.totalReviews ?? 0} reviews)
               </span>
             </div>
           </div>

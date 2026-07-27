@@ -8,14 +8,15 @@ import { getErrorMessage } from "@/lib/errors";
 
 export const TEAM_MEMBERS_QUERY_KEY = ["merchant", "staff"] as const;
 
-export function useTeamMembers() {
+export function useTeamMembers(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: TEAM_MEMBERS_QUERY_KEY,
     queryFn: staffApi.list,
+    enabled: options?.enabled ?? true,
   });
-
+  
   const createMutation = useMutation({
     mutationFn: (payload: CreateStaffRequest) => staffApi.create(payload),
     onSuccess: () => {
