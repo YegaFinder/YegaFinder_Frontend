@@ -3,12 +3,10 @@ import type { ApiEnvelope } from "@/lib/api-response";
 import type { Favorite } from "../types/favorites.types";
 
 /**
- * These endpoints do not exist on the backend yet — see backend review
- * action item #1 (`src/favorites/` is missing entirely). Paths below
- * match what that review proposes (`GET /favorites`, `POST /favorites/:businessId`,
- * `DELETE /favorites/:businessId`). Confirm against the real controller
- * once it ships, the same way profile.api.ts was reconciled against
- * profiles.controller.ts — don't assume this is final.
+ * These endpoints do not exist on the backend yet (no `src/favorites/`
+ * module in the NestJS repo). Paths below are proposed
+ * (`GET /favorites`, `POST /favorites/:businessId`, `DELETE /favorites/:businessId`).
+ * Confirm against the real controller once it ships.
  */
 export const favoritesApi = {
   getFavorites: async (): Promise<Favorite[]> => {

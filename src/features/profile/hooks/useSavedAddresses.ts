@@ -1,99 +1,81 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { profileApi } from "../api/profile.api";
+import { savedPlacesApi } from "../api/saved-places.api";
 import { getErrorMessage } from "@/lib/errors";
-import type {
-  CreateSavedAddressRequest,
-  SavedAddress,
-  UpdateSavedAddressRequest,
-} from "../types/profile.types";
+import type { CreateSavedAddressRequest, UpdateSavedAddressRequest } from "../types/profile.types";
 
-/**
- * Owns the saved-addresses list plus create/update/delete. Mirrors the
- * manual-state convention used elsewhere in this feature and in
- * features/auth. Mutations refetch the list on success rather than
- * hand-patching local state, since the list is small and a refetch keeps
- * this file simple and always consistent with the server.
- */
+export const SAVED_PLACES_QUERY_KEY = ["saved-places"] as const;
+
 export function useSavedAddresses() {
-  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isMutating, setIsMutating] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchAddresses = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await profileApi.getSavedAddresses();
-      setAddresses(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: SAVED_PLACES_QUERY_KEY,
+    queryFn: savedPlacesApi.getSavedPlaces,
+  });
 
-  useEffect(() => {
-    fetchAddresses();
-  }, [fetchAddresses]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: SAVED_PLACES_QUERY_KEY });
 
-  async function addAddress(payload: CreateSavedAddressRequest) {
-    setIsMutating(true);
-    try {
-      await profileApi.createSavedAddress(payload);
+  const addMutation = useMutation({
+    mutationFn: (payload: CreateSavedAddressRequest) => savedPlacesApi.addSavedPlace(payload),
+    onSuccess: async () => {
+      await invalidate();
       toast.success("Address saved.");
-      await fetchAddresses();
-      return true;
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-      return false;
-    } finally {
-      setIsMutating(false);
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
 
-  async function updateAddress(payload: UpdateSavedAddressRequest) {
-    setIsMutating(true);
-    try {
-      await profileApi.updateSavedAddress(payload);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...payload }: UpdateSavedAddressRequest) => {
+      await savedPlacesApi.deleteSavedPlace(id);
+      return savedPlacesApi.addSavedPlace(payload);
+    },
+    onSuccess: async () => {
+      await invalidate();
       toast.success("Address updated.");
-      await fetchAddresses();
-      return true;
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-      return false;
-    } finally {
-      setIsMutating(false);
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
 
-  async function deleteAddress(id: string) {
-    setIsMutating(true);
-    try {
-      await profileApi.deleteSavedAddress(id);
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => savedPlacesApi.deleteSavedPlace(id),
+    onSuccess: async () => {
+      await invalidate();
       toast.success("Address removed.");
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
-      return true;
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-      return false;
-    } finally {
-      setIsMutating(false);
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
 
   return {
-    addresses,
-    isLoading,
-    error,
-    isMutating,
-    addAddress,
-    updateAddress,
-    deleteAddress,
-    refetch: fetchAddresses,
+    addresses: query.data ?? [],
+    isLoading: query.isLoading,
+    isMutating: addMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    addAddress: async (payload: CreateSavedAddressRequest) => {
+      try {
+        await addMutation.mutateAsync(payload);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    updateAddress: async (payload: UpdateSavedAddressRequest) => {
+      try {
+        await updateMutation.mutateAsync(payload);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    deleteAddress: async (id: string) => {
+      try {
+        await deleteMutation.mutateAsync(id);
+        return true;
+      } catch {
+        return false;
+      }
+    },
   };
 }

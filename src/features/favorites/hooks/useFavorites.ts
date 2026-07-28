@@ -7,16 +7,14 @@ import { toast } from "sonner";
 import { favoritesApi } from "../api/favorites.api";
 import { getErrorMessage } from "@/lib/errors";
 
-/** Shared query key — every read AND every mutation's invalidation must use this exact tuple. */
 export const FAVORITES_QUERY_KEY = ["favorites"] as const;
 
 /**
  * Defensive by design: the backend `/favorites` endpoints don't exist
- * yet (backend review action item #1), so a fresh install of this repo
- * will get a 404 from every call here. `endpointNotBuiltYet` lets the
- * page show a friendly "coming soon" state instead of a scary error
- * banner — once the backend module ships, this starts resolving
- * normally with no changes needed here.
+ * yet, so a fresh install will get a 404 from every call here.
+ * `endpointNotBuiltYet` lets the page show a friendly "coming soon"
+ * state instead of a scary error banner — once the backend module
+ * ships, this starts resolving normally with no changes needed here.
  */
 export function useFavorites() {
   const queryClient = useQueryClient();

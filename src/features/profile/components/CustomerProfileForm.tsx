@@ -31,7 +31,14 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
   });
 
   const onSubmit = async (data: ProfileFormValues) => {
-    await updateProfile(data);
+    // dateOfBirth is @IsOptional() @IsDateString() on the backend —
+    // @IsOptional() only skips validation for `undefined`, not "".
+    // Omit empty-string fields entirely instead of sending "".
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== ""),
+    ) as ProfileFormValues;
+
+    await updateProfile(payload);
   };
 
   return (
@@ -72,12 +79,7 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         <label htmlFor="bio" className="text-sm font-medium text-foreground">
           Bio
         </label>
-        <Textarea
-          id="bio"
-          rows={3}
-          className="mt-1"
-          {...register("bio")}
-        />
+        <Textarea id="bio" rows={3} className="mt-1" {...register("bio")} />
         {errors.bio && <FormError message={errors.bio.message} />}
       </div>
 
@@ -92,6 +94,8 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         >
           <option value="en">English</option>
           <option value="am">አማርኛ</option>
+          <option value="om">Afaan Oromoo</option>
+          <option value="ti">ትግርኛ</option>
         </select>
         {errors.preferredLanguage && <FormError message={errors.preferredLanguage.message} />}
       </div>

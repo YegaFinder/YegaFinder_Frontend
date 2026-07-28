@@ -14,9 +14,6 @@ export function FavoritesList() {
     return <p className="text-sm text-muted-foreground">Loading favorites…</p>;
   }
 
-  // The backend favorites module doesn't exist yet (backend review
-  // action item #1) — show a friendly placeholder instead of an error
-  // banner until it ships.
   if (endpointNotBuiltYet) {
     return (
       <div className="rounded-[14px] border border-dashed border-yegna-border bg-yegna-background px-4 py-6 text-center">
