@@ -54,6 +54,11 @@ export const viewport: Viewport = {
   themeColor: "#0B5C8E",
   width: "device-width",
   initialScale: 1,
+  // Lets the page draw under the notch/home-indicator so env(safe-area-inset-*)
+  // resolves to real pixel values instead of 0 — needed for the fixed
+  // bottom nav (mobile-bottom-nav.tsx) to sit above the home-indicator
+  // instead of behind it on iOS PWAs.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

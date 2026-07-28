@@ -34,7 +34,7 @@ export function useRegister() {
 
       router.push(ROUTES.VERIFY_OTP);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(getErrorMessage(err, { 409: "This email is already registered." }));
     } finally {
       setIsLoading(false);
     }

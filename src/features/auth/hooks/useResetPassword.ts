@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { authApi } from "../api/auth.api";
+import { useAuthStore } from "@/store/auth-store";
 import { ROUTES } from "@/constants/routes";
 import { getErrorMessage } from "@/lib/errors";
 import type { ResetPasswordFormValues } from "../schemas/reset-password.schema";
@@ -11,6 +12,9 @@ import type { ResetPasswordFormValues } from "../schemas/reset-password.schema";
 export function useResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null);
+  const setDevOtp = useAuthStore((state) => state.setDevOtp);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,5 +52,22 @@ export function useResetPassword() {
     }
   }
 
-  return { submit, isLoading, error, email };
+  async function resend() {
+    if (!email) return;
+    setIsResending(true);
+    setError(null);
+    setResendSuccess(null);
+
+    try {
+      const { otp } = await authApi.forgotPassword({ email });
+      setDevOtp(otp ?? null);
+      setResendSuccess("Reset code has been resent to your email.");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsResending(false);
+    }
+  }
+
+  return { submit, resend, isLoading, isResending, error, resendSuccess, email };
 }

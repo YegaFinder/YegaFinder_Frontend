@@ -31,9 +31,12 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
   });
 
   const onSubmit = async (data: ProfileFormValues) => {
-    // dateOfBirth is @IsOptional() @IsDateString() on the backend —
-    // @IsOptional() only skips validation for `undefined`, not "".
-    // Omit empty-string fields entirely instead of sending "".
+    // The backend's dateOfBirth is @IsOptional() @IsDateString() —
+    // @IsOptional() only skips validation for `undefined`, not "". Left
+    // untouched, this field defaults to "" (see defaultValues above),
+    // which @IsDateString() then rejects as an invalid date -> 400 on
+    // every save where the user didn't set a birth date. Omit it (and
+    // any other empty-string field) entirely instead of sending "".
     const payload = Object.fromEntries(
       Object.entries(data).filter(([, value]) => value !== ""),
     ) as ProfileFormValues;
@@ -61,7 +64,6 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         </div>
       </div>
 
-      {/* Editable fields */}
       <div>
         <label htmlFor="dateOfBirth" className="text-sm font-medium text-foreground">
           Date of birth

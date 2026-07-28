@@ -1,37 +1,27 @@
-/**
- * Single source of truth for every route path in the app.
- *
- * Why this exists: once the app has 130+ screens across customer,
- * merchant, and admin roles (per the SRS), hardcoding path strings like
- * "/login" or "/dashboard/bookings" all over the codebase makes renaming
- * a route a find-and-replace nightmare. Import ROUTES.LOGIN instead of
- * typing "/login" directly, everywhere — including in middleware.ts.
- */
 export const ROUTES = {
   HOME: "/",
-  APP_HOME:"/home",//post-login placeholder, to be replaced with a real home screen in Sprint 2
-  // Auth (Sprint 1)
+  APP_HOME:"/home",
   LOGIN: "/login",
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
   VERIFY_OTP: "/verify-otp",
 
-  // Customer (Sprint 2+)
+  // Legal (public, unauthenticated)
+  TERMS: "/terms",
+  PRIVACY: "/privacy",
+
   PROFILE: "/profile",
   SAVED_PLACES: "/saved-places",
   FAVORITES: "/favorites",
 
-  // Business discovery (Sprint 3+)
   BUSINESSES: "/businesses",
   BUSINESS_DETAIL: (id: string) => `/businesses/${id}`,
 
-  // Merchant (later phase)
   MERCHANT_DASHBOARD: "/dashboard",
   MERCHANT_PROFILE: "/dashboard/profile",
   MERCHANT_BOOKINGS: "/dashboard/bookings",
   MERCHANT_LISTINGS: "/dashboard/listings",
 
-  // Admin (later phase)
   ADMIN_DASHBOARD: "/admin",
 } as const;

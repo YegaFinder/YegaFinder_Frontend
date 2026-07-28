@@ -21,7 +21,9 @@ export interface CustomerProfile extends BaseProfile {
   dateOfBirth?: string;
   bio?: string;
   preferredLanguage: string;
-  notificationPreferences: Record<string, boolean>;
+  // Can be absent (null/undefined) on the backend for a profile that has
+  // never had a preference explicitly saved yet — do not assume present.
+  notificationPreferences?: Record<string, boolean> | null;
   savedAddresses: SavedAddress[];
   loyaltyPoints: number;
   isProfileComplete: boolean;
@@ -70,6 +72,9 @@ export interface MerchantProfile extends BaseProfile {
   latitude?: number;
   longitude?: number;
   websiteUrl?: string;
+  taxId?: string;
+  deliveryRadius?: number;
+  serviceAreas?: string[];
   socialMedia: SocialMediaLinks;
   businessCategories: string[];
   servicesOffered: BusinessService[];
@@ -77,21 +82,19 @@ export interface MerchantProfile extends BaseProfile {
   isProfileComplete: boolean;
 
   // Read-only — confirmed NO endpoint modifies any of these four
-  // (BACKEND_INTEGRATION_GUIDE.md §5, §10). Never PUT these.
+  // (BACKEND_API_GUIDE.md §5, §10). Never PUT these.
   verificationStatus: "pending" | "verified" | "rejected";
   averageRating: number;
   totalReviews: number;
   isFeatured: boolean;
 }
 
-
 /**
  * Payload shapes for the two merchant-profile write endpoints.
  * Deliberately restricted to fields that actually exist on
- * CreateMerchantProfileDto / UpdateMerchantProfileDto — the global
- * ValidationPipe has forbidNonWhitelisted:true, so any extra key
- * (e.g. accidentally including verificationStatus) 400s the whole
- * request (BACKEND_INTEGRATION_GUIDE.md §1, §5.8).
+ * CreateBusinessDto / UpdateBusinessDto — the global ValidationPipe has
+ * forbidNonWhitelisted:true, so any extra key 400s the whole request
+ * (BACKEND_API_GUIDE.md §1.5, §5.1).
  */
 export interface UpdateMerchantProfileRequest {
   businessName?: string;
@@ -101,11 +104,27 @@ export interface UpdateMerchantProfileRequest {
   contactEmail?: string;
   contactPhone?: string;
   businessAddress?: string;
+  latitude?: number;
+  longitude?: number;
   websiteUrl?: string;
+  taxId?: string;
+  deliveryRadius?: number;
+  serviceAreas?: string[];
+  socialMedia?: SocialMediaLinks;
+  /**
+   * ⚠️ Accepted by the DTO's validation but SILENTLY DISCARDED server-side
+   * (BACKEND_API_GUIDE.md §5.1 — destructured out and never used in
+   * profiles.service.ts). Sending it will not error, but it will never
+   * persist or come back on GET. Left here so the UI can keep sending it
+   * without a 400, and so this starts working automatically the moment
+   * the backend fixes it — don't spend time debugging your own payload
+   * for this field, it's a confirmed backend no-op.
+   */
   businessCategories?: string[];
+  servicesOffered?: BusinessService[];
 }
 
-/** businessName is the ONLY required field on create (§5.8). */
+/** businessName is the ONLY required field on create (§5.1). */
 export type CreateMerchantProfileRequest = UpdateMerchantProfileRequest & { businessName: string };
 
 /**
@@ -128,12 +147,26 @@ export interface UpdateBusinessHoursRequest {
 // Customer-specific request types (appended)
 // ========================================================
 
+/**
+ * Matches CreateCustomerProfileDto / UpdateCustomerProfileDto exactly
+ * (identical shape per the integration guide §5.7). PUT is a partial
+ * merge server-side (Object.assign-style) at the TOP LEVEL only — so
+ * sending `savedAddresses` or `notificationPreferences` REPLACES the
+ * whole array/object, it does not merge item-by-item. Callers that only
+ * want to change one address or one notification key must send back the
+ * full, already-mutated array/object.
+ */
 export type UpdateCustomerProfileRequest = {
   dateOfBirth?: string;
   bio?: string;
   preferredLanguage?: string;
   avatarUrl?: string;
+  notificationPreferences?: Record<string, boolean>;
+  savedAddresses?: SavedAddress[];
 };
+
+/** POST and PUT share the same DTO shape — nothing is required to create. */
+export type CreateCustomerProfileRequest = UpdateCustomerProfileRequest;
 
 export type UpdateNotificationPreferencesRequest = {
   notificationPreferences: Record<string, boolean>;
