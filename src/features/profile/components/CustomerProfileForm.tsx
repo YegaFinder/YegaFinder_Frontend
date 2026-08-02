@@ -64,7 +64,6 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         </div>
       </div>
 
-      {/* Editable fields */}
       <div>
         <label htmlFor="dateOfBirth" className="text-sm font-medium text-foreground">
           Date of birth
@@ -82,12 +81,7 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         <label htmlFor="bio" className="text-sm font-medium text-foreground">
           Bio
         </label>
-        <Textarea
-          id="bio"
-          rows={3}
-          className="mt-1"
-          {...register("bio")}
-        />
+        <Textarea id="bio" rows={3} className="mt-1" {...register("bio")} />
         {errors.bio && <FormError message={errors.bio.message} />}
       </div>
 
@@ -102,6 +96,8 @@ export function CustomerProfileForm({ profile }: CustomerProfileFormProps) {
         >
           <option value="en">English</option>
           <option value="am">አማርኛ</option>
+          <option value="om">Afaan Oromoo</option>
+          <option value="ti">ትግርኛ</option>
         </select>
         {errors.preferredLanguage && <FormError message={errors.preferredLanguage.message} />}
       </div>

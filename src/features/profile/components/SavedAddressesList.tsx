@@ -19,21 +19,6 @@ const EMPTY_FORM: SavedAddressFormValues = {
   address: "",
 };
 
-/**
- * `SavedAddress` on main is `{ id, label, address, latitude, longitude }`
- * — a single free-text address line, no addressLine1/2/city/region, and
- * no `isDefault` flag (so the "Default" badge/selection this list had
- * before is dropped for now — there's nowhere to persist it).
- *
- * latitude/longitude are required, non-null numbers on the response
- * type. Previously this form submitted `0/0` placeholders since there
- * was no way to collect real coordinates from a typed address. That's
- * fixed here: `AddressForm` now runs the typed address through
- * `geocodeAddress` (OpenStreetMap Nominatim, see src/lib/geocode.ts)
- * before allowing a save, and re-requires a fresh lookup if the address
- * text changes after coordinates were found — so stale/mismatched
- * coordinates never get silently submitted.
- */
 export function SavedAddressesList() {
   const { addresses, isLoading, isMutating, addAddress, updateAddress, deleteAddress } =
     useSavedAddresses();
@@ -130,7 +115,6 @@ function toFormValues(address: SavedAddress): SavedAddressFormValues {
   };
 }
 
-/** Coordinates now always come from a confirmed geocode lookup — see AddressForm below. */
 function toRequest(values: SavedAddressFormValues, coords: GeocodeResult) {
   return {
     label: values.label,
@@ -142,7 +126,6 @@ function toRequest(values: SavedAddressFormValues, coords: GeocodeResult) {
 
 interface AddressFormProps {
   initialValues: SavedAddressFormValues;
-  /** Existing coordinates when editing an unchanged address; null for a brand-new one. */
   initialCoords: GeocodeResult | null;
   isSaving: boolean;
   onCancel: () => void;
@@ -161,9 +144,6 @@ function AddressForm({ initialValues, initialCoords, isSaving, onCancel, onSubmi
   });
 
   const [coords, setCoords] = useState<GeocodeResult | null>(initialCoords);
-  // Tracks the exact address text the current `coords` were resolved for,
-  // so we can tell when the user has edited the address since the last
-  // successful lookup (or since loading an existing saved address).
   const [coordsAddress, setCoordsAddress] = useState<string | null>(
     initialCoords ? initialValues.address : null,
   );

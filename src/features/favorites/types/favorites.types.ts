@@ -1,19 +1,18 @@
 /**
- * Minimal favorite-business shape for the customer-facing favorites list.
- *
- * IMPORTANT: there is no `businesses` module on the backend yet — it's
- * scoped for Sprint 3+ (see ROUTES.BUSINESSES) — and there is currently
- * NO backend favorites endpoint at all (backend review action item #1:
- * `src/favorites/` doesn't exist in the NestJS repo). `businessName` and
- * `businessImageUrl` are therefore optional rather than assumed, since
- * neither side of this contract is confirmed yet. Reconcile this type
- * against the real DTO the same way profile.types.ts was reconciled
- * against ProfileResponseDto once the backend module ships.
+ * Confirmed against the actual backend (favorite.entity.ts +
+ * favorites.service.ts): GET /favorites eager-loads the full nested
+ * `business` relation on each row — it is NOT a flat businessName/
+ * businessImageUrl on the favorite itself.
  */
 export interface Favorite {
   id: string;
+  userId: string;
   businessId: string;
-  businessName?: string;
-  businessImageUrl?: string;
+  business: {
+    id: string;
+    businessName: string;
+    logoUrl?: string;
+  };
   createdAt: string;
+  updatedAt: string;
 }

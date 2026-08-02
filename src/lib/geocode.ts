@@ -4,10 +4,6 @@
  * No API key required, which matches "OpenStreetMap" already listed as
  * one of the project's Maps options.
  *
- * This exists specifically so SavedAddressesList stops submitting
- * `latitude: 0, longitude: 0` placeholders — see the docblock at the
- * top of that file for the full context.
- *
  * Production note: Nominatim's usage policy is fine for low-volume,
  * client-triggered lookups like this (one request per "Find location"
  * click), but it is rate-limited and asks for a descriptive User-Agent,
