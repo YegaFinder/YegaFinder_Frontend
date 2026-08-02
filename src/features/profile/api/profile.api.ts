@@ -6,7 +6,6 @@ import type {
   UpdateCustomerProfileRequest,
 } from "../types/profile.types";
 
-
 export const profileApi = {
   /** Backend: GET /profile (controller @Controller('profile')) */
   getProfile: async (): Promise<CustomerProfile> => {
@@ -26,7 +25,12 @@ export const profileApi = {
     return data.data;
   },
 
-  /** Backend: POST /profile/avatar */
+  /**
+   * Backend: POST /profile/avatar — confirmed a non-functional stub
+   * (fabricates a fake S3 URL from the filename, no real upload).
+   * ProfileAvatar.tsx uses the real presigned-upload flow instead and
+   * does not call this method — kept only for shape parity.
+   */
   uploadAvatar: async (file: File): Promise<CustomerProfile> => {
     const form = new FormData();
     form.append("file", file);
