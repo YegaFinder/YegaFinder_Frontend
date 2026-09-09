@@ -17,6 +17,13 @@ const GUEST_ONLY_ROUTES: string[] = [
   ROUTES.VERIFY_OTP,
 ];
 
+// Reachable by guests AND logged-in users — unlike GUEST_ONLY_ROUTES,
+// logged-in users are NOT redirected away from these.
+// TODO: move to ROUTES constant once /businesses has one there.
+const PUBLIC_ROUTE_PREFIXES: string[] = ["/businesses"];
+const isPublicRoute = (pathname: string) =>
+  PUBLIC_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
 export function middleware(request: NextRequest) {
   const hasSession = request.cookies.get("has_session")?.value;
   const role = request.cookies.get("user_role")?.value;
@@ -29,7 +36,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Not logged in and hitting a protected route
-  if (!hasSession && !isGuestOnlyRoute) {
+  if (!hasSession && !isGuestOnlyRoute && !isPublicRoute(pathname)) {
     const loginUrl = new URL(ROUTES.LOGIN, request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
