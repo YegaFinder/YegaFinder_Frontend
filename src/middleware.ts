@@ -20,7 +20,7 @@ const GUEST_ONLY_ROUTES: string[] = [
 // Reachable by guests AND logged-in users — unlike GUEST_ONLY_ROUTES,
 // logged-in users are NOT redirected away from these.
 // TODO: move to ROUTES constant once /businesses has one there.
-const PUBLIC_ROUTE_PREFIXES: string[] = ["/businesses"];
+const PUBLIC_ROUTE_PREFIXES: string[] = ["/businesses", ROUTES.NEARBY];
 const isPublicRoute = (pathname: string) =>
   PUBLIC_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
@@ -76,6 +76,7 @@ export const config = {
     "/favorites/:path*",
       "/businesses",
       "/businesses/:path*",
+      "/nearby",
     "/login",
     "/register",
     "/forgot-password",

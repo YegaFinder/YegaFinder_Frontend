@@ -14,6 +14,19 @@ export interface BusinessListItem {
   address: string;
 }
 
+/**
+ * GET /businesses/nearby item shape — same fields as BusinessListItem plus
+ * the coordinates and distance the nearby endpoint adds. Kept as its own
+ * type rather than widening BusinessListItem so /businesses (no coords)
+ * doesn't silently gain optional geo fields it never returns.
+ * UNCONFIRMED: exact field names — ask backend when /businesses/nearby ships.
+ */
+export interface NearbyBusinessItem extends BusinessListItem {
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+}
+
 export interface ContactInfo {
   phone: string;
   email: string;

@@ -17,6 +17,7 @@ export const ROUTES = {
 
   BUSINESSES: "/businesses",
   BUSINESS_DETAIL: (id: string) => `/businesses/${id}`,
+  NEARBY: "/nearby",
 
   MERCHANT_DASHBOARD: "/dashboard",
   MERCHANT_PROFILE: "/dashboard/profile",

@@ -1,10 +1,18 @@
 ﻿import { apiClient } from "@/lib/api-client";
-import type { BusinessListItem, BusinessDetail } from "@/types/business.types";
+import type { BusinessListItem, BusinessDetail, NearbyBusinessItem } from "@/types/business.types";
 
 export interface GetBusinessesParams {
   category?: string; // unconfirmed: is this a category id or name? ask backend
   page?: number;
   limit?: number;
+}
+
+export interface GetNearbyParams {
+  latitude: number;
+  longitude: number;
+  /** Radius in kilometers. */
+  radiusKm?: number;
+  category?: string;
 }
 
 // Matches the doc's actual example payloads, not the app's existing
@@ -17,6 +25,11 @@ interface BusinessListResponse {
 interface BusinessDetailResponse {
   data: BusinessDetail;
 }
+// UNCONFIRMED shape (Sprint 4 backend endpoint) — mirrors BusinessListResponse
+// until the real contract is confirmed; update both together if it drifts.
+interface NearbyBusinessResponse {
+  data: NearbyBusinessItem[];
+}
 
 export const businessDiscoveryApi = {
   getBusinesses: async (params: GetBusinessesParams) => {
@@ -26,6 +39,15 @@ export const businessDiscoveryApi = {
 
   getBusinessById: async (id: string) => {
     const { data } = await apiClient.get<BusinessDetailResponse>(`/businesses/${id}`);
+    return data;
+  },
+
+  /** Minimal integration for the /nearby page shell — GET /businesses/nearby
+   * per the V1 Sprint Plan (Sprint 4 backend). Only wired up enough to make
+   * the shell show real pins; full filter/sort query params can be added
+   * here as /nearby grows past a shell. */
+  getNearby: async (params: GetNearbyParams) => {
+    const { data } = await apiClient.get<NearbyBusinessResponse>("/businesses/nearby", { params });
     return data;
   },
 };
