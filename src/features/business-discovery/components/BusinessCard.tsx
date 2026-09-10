@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import Image from "next/image";
 import type { Listing } from "../types/listing.types";
+import { RatingBadge } from "./RatingBadge";
 
 export function BusinessCard({ listing }: { listing: Listing }) {
   const primaryCategory = listing.businessCategories?.[0]?.name ?? "Uncategorized";
@@ -21,7 +22,7 @@ export function BusinessCard({ listing }: { listing: Listing }) {
         {listing.businessAddress && (
           <p className="text-sm text-muted-foreground truncate">{listing.businessAddress}</p>
         )}
-        <span className="text-sm">⭐ {listing.averageRating.toFixed(1)} ({listing.totalReviews})</span>
+        <RatingBadge rating={listing.averageRating} reviewCount={listing.totalReviews} size="sm" />
       </div>
     </Link>
   );
