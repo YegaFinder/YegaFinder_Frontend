@@ -5,13 +5,15 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiEnvelope } from "@/lib/api-response"; 
 
 
-export type UploadType = "avatar" | "logo" | "banner" | "document";
+export type UploadType = "avatar" | "logo" | "banner" | "document" | "gallery";
 
 export const ALLOWED_FILE_TYPES: Record<UploadType, string[]> = {
   avatar: ["image/jpeg", "image/png", "image/webp"],
   logo: ["image/jpeg", "image/png", "image/webp"],
   banner: ["image/jpeg", "image/png", "image/webp"],
   document: ["application/pdf", "image/jpeg", "image/png"],
+    gallery: ["image/jpeg", "image/png", "image/webp"],
+
 };
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB, per FRONTEND_INTEGRATION_GUIDE.md
