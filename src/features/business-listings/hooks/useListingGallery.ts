@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { businessListingsApi } from "../api/business-listings.api";
 import { getErrorMessage } from "@/lib/errors";
-import type { BusinessListingGalleryPhoto } from "@/types/business.types";
+import type { BusinessListingGalleryPhoto } from "../types/business-listing.types";
 
 export function galleryQueryKey(listingId: string) {
   return ["business-listings", "gallery", listingId] as const;
