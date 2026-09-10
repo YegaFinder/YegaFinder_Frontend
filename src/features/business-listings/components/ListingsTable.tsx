@@ -53,7 +53,8 @@ export function ListingsTable() {
             <tbody>
               {listings.map((listing) => (
                 <tr key={listing.id} className="border-t border-yegna-border">
-                  <td className="px-4 py-3 font-medium text-yegna-navy">{listing.title}</td>
+                  <td className="px-4 py-3 font-medium text-yegna-navy">{listing.name}</td>
+
                   <td className="px-4 py-3 text-muted-foreground">{listing.category?.name ?? "—"}</td>
                   <td className="px-4 py-3">
                     <ListingStatusBadge status={listing.status} />

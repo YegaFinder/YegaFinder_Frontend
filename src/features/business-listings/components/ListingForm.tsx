@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldError, Spinner } from "@/components/shared/form-feedback";
-import { useCategories } from "@/lib/hooks/useCategories";
+import { useTopLevelCategories, useSubcategories } from "../hooks/useListingCategories";
 
 import { listingSchema, type ListingFormValues } from "../schemas/listing.schema";
 import type { MerchantListing } from "../types/business-listing.types";
@@ -22,7 +22,7 @@ interface ListingFormProps {
 }
 
 export function ListingForm({ listing, onSubmit, isSaving }: ListingFormProps) {
-  const { topLevel, subcategoriesOf, isLoading: categoriesLoading } = useCategories();
+  const { topLevel, isLoading: categoriesLoading } = useTopLevelCategories();
 
   const {
     register,
@@ -33,7 +33,7 @@ export function ListingForm({ listing, onSubmit, isSaving }: ListingFormProps) {
   } = useForm<ListingFormValues>({
     resolver: zodResolver(listingSchema),
     defaultValues: {
-      title: listing?.title ?? "",
+      name: listing?.name ?? "",
       description: listing?.description ?? "",
       categoryId: listing?.category?.id ?? "",
       subcategoryId: listing?.subcategory?.id ?? "",
@@ -45,7 +45,7 @@ export function ListingForm({ listing, onSubmit, isSaving }: ListingFormProps) {
   useEffect(() => {
     if (!listing) return;
     reset({
-      title: listing.title ?? "",
+      name: listing.name ?? "",
       description: listing.description ?? "",
       categoryId: listing.category?.id ?? "",
       subcategoryId: listing.subcategory?.id ?? "",
@@ -53,19 +53,21 @@ export function ListingForm({ listing, onSubmit, isSaving }: ListingFormProps) {
   }, [listing, reset]);
 
   const selectedCategoryId = watch("categoryId");
-  const subcategories = selectedCategoryId ? subcategoriesOf(selectedCategoryId) : [];
+  const { subcategories, isLoading: subcategoriesLoading } = useSubcategories(
+    selectedCategoryId || undefined,
+  );
 
   return (
     <form onSubmit={handleSubmit((values) => onSubmit(values))} className="space-y-6" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="title">Listing title</Label>
+        <Label htmlFor="name">Listing name</Label>
         <Input
-          id="title"
+          id="name"
           placeholder="e.g. Weekend Brunch Menu"
-          aria-invalid={!!errors.title}
-          {...register("title")}
+          aria-invalid={!!errors.name}
+          {...register("name")}
         />
-        <FieldError message={errors.title?.message} />
+        <FieldError message={errors.name?.message} />
       </div>
 
       <div className="space-y-1.5">
@@ -104,7 +106,7 @@ export function ListingForm({ listing, onSubmit, isSaving }: ListingFormProps) {
           <Label htmlFor="subcategoryId">Subcategory (optional)</Label>
           <select
             id="subcategoryId"
-            disabled={!selectedCategoryId || subcategories.length === 0}
+            disabled={!selectedCategoryId || subcategoriesLoading || subcategories.length === 0}
             className="h-10 w-full rounded-[14px] border border-yegna-border bg-background px-3 text-sm disabled:opacity-50"
             {...register("subcategoryId")}
           >
