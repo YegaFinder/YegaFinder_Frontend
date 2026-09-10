@@ -13,8 +13,6 @@ export function useMyListings(pageSize = 10) {
   const query = useQuery({
     queryKey: [...MY_LISTINGS_QUERY_KEY, page, pageSize],
     queryFn: () => businessListingsApi.getMyListings({ page, pageSize }),
-    // Keep the current page's rows on screen while the next page loads,
-    // instead of flashing an empty table between pages.
     placeholderData: (prev) => prev,
   });
 

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { BusinessListingStatus } from "@/types/business.types";
+import type { BusinessListingStatus } from "../types/business-listing.types";
 
 const STYLES: Record<BusinessListingStatus, string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
@@ -15,9 +15,8 @@ const LABELS: Record<BusinessListingStatus, string> = {
 
 /**
  * Deliberately separate from profile/VerificationBadge.tsx — that badge is
- * about the merchant's own identity verification ("verified" business
- * account), a different concept from whether one specific listing has
- * been approved for public display.
+ * about the merchant's own identity verification, a different concept from
+ * whether one specific listing has been approved for public display.
  */
 export function ListingStatusBadge({ status }: { status: BusinessListingStatus }) {
   return (

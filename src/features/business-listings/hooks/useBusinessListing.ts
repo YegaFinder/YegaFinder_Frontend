@@ -14,11 +14,7 @@ export function listingQueryKey(id: string) {
 
 /**
  * `id` is undefined on the "new listing" screen — the detail query is
- * disabled in that case, and only `createListing` gets used. On the edit
- * screen, `id` is always passed and all four operations are available.
- *
- * Combines read + write in one hook, same shape as useMerchantProfile —
- * the convention this codebase already uses for a single-resource feature.
+ * disabled in that case, and only `createListing` gets used.
  */
 export function useBusinessListing(id?: string) {
   const queryClient = useQueryClient();
@@ -63,10 +59,6 @@ export function useBusinessListing(id?: string) {
       toast.success("Listing removed.");
     },
     onError: (error) => {
-      // A listing tied to active bookings almost certainly can't be
-      // deleted outright once Sprint 5 ships — this is a safe guess at
-      // the shape of that conflict now, cheap to adjust once the real
-      // error message is known.
       toast.error(getErrorMessage(error, { 409: "This listing has active bookings and can't be deleted yet." }));
     },
   });

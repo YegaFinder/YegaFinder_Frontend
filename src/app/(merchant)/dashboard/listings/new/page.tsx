@@ -14,8 +14,6 @@ export default function NewListingPage() {
   async function handleSubmit(values: ListingFormValues) {
     try {
       const listing = await createListing(toCreateListingPayload(values));
-      // Straight into edit mode so the merchant can add gallery photos
-      // right away — the gallery uploader needs a real listing id.
       router.push(`${ROUTES.MERCHANT_LISTINGS}/${listing.id}/edit`);
     } catch {
       /* toast already shown */

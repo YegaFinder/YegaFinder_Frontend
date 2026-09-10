@@ -1,12 +1,12 @@
 import { apiClient } from "@/lib/api-client";
 import type { ApiEnvelope } from "@/lib/api-response";
 import type { PaginatedResponse } from "@/types/api.types";
-import type { BusinessListingGalleryPhoto } from "@/types/business.types";
 import type {
   MerchantListing,
   CreateListingRequest,
   UpdateListingRequest,
   MyListingsQuery,
+  BusinessListingGalleryPhoto,
 } from "../types/business-listing.types";
 
 export const businessListingsApi = {
@@ -51,11 +51,9 @@ export const businessListingsApi = {
 
   /**
    * Backend: POST /merchant/listings/:id/gallery
-   *
    * Called AFTER the file is already sitting in S3 via the shared presign
    * flow (useImageUpload) — this just persists the resulting URL as a real
-   * gallery row, which is the piece that was stubbed out in Sprint 2
-   * (BusinessGallery.tsx's photos never survived a refresh).
+   * gallery row.
    */
   addGalleryPhoto: async (listingId: string, fileUrl: string): Promise<BusinessListingGalleryPhoto> => {
     const { data } = await apiClient.post<ApiEnvelope<BusinessListingGalleryPhoto>>(

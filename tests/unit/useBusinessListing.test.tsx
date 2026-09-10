@@ -24,18 +24,18 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  function Wrapper({ children }: { children: ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  }
+  return Wrapper;
 }
 
 const mockListing: MerchantListing = {
   id: "listing1",
-  merchantProfileId: "mp1",
   title: "Weekend Brunch Menu",
   description: "",
-  category: { id: "cat1", name: "Restaurants", slug: "restaurants" },
-  subcategory: null,
+  category: { id: "cat1", name: "Restaurants" },
+  subcategories: [],
   gallery: [],
   status: "pending",
   createdAt: "",
