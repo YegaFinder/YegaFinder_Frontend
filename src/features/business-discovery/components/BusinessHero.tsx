@@ -1,6 +1,7 @@
 ﻿import Image from "next/image";
 import type { Listing } from "../types/listing.types";
 import { RatingBadge } from "./RatingBadge";
+import { VerificationBadge } from "./VerificationBadge";
 
 export function BusinessHero({ listing }: { listing: Listing }) {
   return (
@@ -12,6 +13,7 @@ export function BusinessHero({ listing }: { listing: Listing }) {
         <h1 className="text-2xl font-semibold text-white">{listing.businessName}</h1>
         {listing.businessAddress && <p className="text-sm text-white/80">{listing.businessAddress}</p>}
         <div className="mt-1"><RatingBadge rating={listing.averageRating} reviewCount={listing.totalReviews} /></div>
+        <div className="mt-1"><VerificationBadge status={listing.verificationStatus} /></div>
       </div>
     </div>
   );

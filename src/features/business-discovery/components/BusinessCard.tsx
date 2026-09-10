@@ -2,6 +2,7 @@
 import Image from "next/image";
 import type { Listing } from "../types/listing.types";
 import { RatingBadge } from "./RatingBadge";
+import { VerificationBadge } from "./VerificationBadge";
 
 export function BusinessCard({ listing }: { listing: Listing }) {
   const primaryCategory = listing.businessCategories?.[0]?.name ?? "Uncategorized";
@@ -23,6 +24,7 @@ export function BusinessCard({ listing }: { listing: Listing }) {
           <p className="text-sm text-muted-foreground truncate">{listing.businessAddress}</p>
         )}
         <RatingBadge rating={listing.averageRating} reviewCount={listing.totalReviews} size="sm" />
+      <VerificationBadge status={listing.verificationStatus} size="sm" />
       </div>
     </Link>
   );
