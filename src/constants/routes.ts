@@ -22,6 +22,6 @@ export const ROUTES = {
   MERCHANT_PROFILE: "/dashboard/profile",
   MERCHANT_BOOKINGS: "/dashboard/bookings",
   MERCHANT_LISTINGS: "/dashboard/listings",
-
+  MESSAGES: "/messages",
   ADMIN_DASHBOARD: "/admin",
 } as const;

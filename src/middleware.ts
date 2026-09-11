@@ -49,7 +49,8 @@ export function middleware(request: NextRequest) {
       pathname === ROUTES.APP_HOME ||
       pathname.startsWith(ROUTES.PROFILE) ||
       pathname.startsWith(ROUTES.SAVED_PLACES) ||
-      pathname.startsWith(ROUTES.FAVORITES);
+      pathname.startsWith(ROUTES.FAVORITES) ||
+      pathname.startsWith(ROUTES.MESSAGES);
     const isMerchantRoute = pathname.startsWith(ROUTES.MERCHANT_DASHBOARD);
 
     if (isCustomerRoute && role === "Merchant") {
@@ -81,5 +82,7 @@ export const config = {
     "/forgot-password",
     "/reset-password",
     "/verify-otp",
+    "/messages",
+    "/messages/:path*",
   ],
 };

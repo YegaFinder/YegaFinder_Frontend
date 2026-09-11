@@ -4,6 +4,12 @@ import { z } from "zod";
 const envSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().url(),
   NEXT_PUBLIC_TEST_MODE: z.enum(["true", "false"]).optional(),
+  // Optional on purpose — useChatSocket derives a ws(s):// URL from
+  // NEXT_PUBLIC_API_URL automatically if this isn't set, so nobody's
+  // existing .env needs to change for chat to at least attempt a
+  // connection. Set this explicitly if the chat server ends up living on
+  // a different host than the REST API.
+  NEXT_PUBLIC_WS_URL: z.string().url().optional(),
 });
 
 const isDev = process.env.NODE_ENV === "development";
