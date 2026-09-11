@@ -7,6 +7,16 @@ import type { Listing } from "../types/listing.types";
 
 type SortOption = "rating" | "name";
 
+function CardSkeleton() {
+  return (
+    <div className="rounded-lg border p-4 space-y-3 animate-pulse">
+      <div className="h-32 rounded-md bg-muted" />
+      <div className="h-4 w-3/4 rounded bg-muted" />
+      <div className="h-3 w-1/2 rounded bg-muted" />
+    </div>
+  );
+}
+
 // Local, self-contained filter/sort UI for now — swap to the shared
 // FilterBar/SortDropdown components once that PR actually merges.
 // Client-side only: backend has no /search endpoint yet, and /listings
@@ -15,7 +25,7 @@ type SortOption = "rating" | "name";
 export function SearchFeed() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("rating");
-  const { data, isLoading, isError } = useListings();
+  const { data, isLoading, isError, refetch, isRefetching } = useListings();
 
   const listings = useMemo(() => data?.listings ?? [], [data]);
 
@@ -59,17 +69,43 @@ export function SearchFeed() {
         </select>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">Loading…</p>}
-      {isError && <p className="text-destructive">Couldn&apos;t load businesses.</p>}
-      {!isLoading && results.length === 0 && (
-        <p className="text-muted-foreground">No businesses match &quot;{query}&quot;.</p>
+      {isLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {results.map((listing: Listing) => (
-          <BusinessCard key={listing.id} listing={listing} />
-        ))}
-      </div>
+      {isError && (
+        <div className="rounded-lg border p-6 text-center space-y-3">
+          <p className="text-destructive text-sm">Couldn&apos;t load businesses.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            {isRefetching ? "Retrying…" : "Try again"}
+          </button>
+        </div>
+      )}
+
+      {!isLoading && !isError && results.length === 0 && (
+        <div className="rounded-lg border p-8 text-center">
+          <p className="text-muted-foreground">
+            {query ? `No businesses match "${query}".` : "No businesses to show."}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && !isError && results.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {results.map((listing: Listing) => (
+            <BusinessCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
