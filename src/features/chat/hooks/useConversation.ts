@@ -1,173 +1,84 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { chatApi } from "../api/chat.api";
-import { useChatSocket } from "./useChatSocket";
 import type { ChatMessage } from "../types/chat.types";
 
+function messagesQueryKey(businessId: string) {
+  return ["chat", "messages", businessId] as const;
+}
+
 /**
- * A short delay before falling back to REST after a socket send — not a
- * server timeout, just "if the socket claimed to send it but nothing to
- * indicate success happens quickly, try the reliable path instead of
- * leaving the message stuck looking pending forever." Generous on
- * purpose; this only fires for messages the socket accepted, so most of
- * the time it never triggers at all — the socket's own echo confirms the
- * message well before this fires.
+ * No WebSocket in the real contract, so "live" here means polling —
+ * refetchInterval re-checks for new messages every few seconds while this
+ * screen is open. Not real-time, but a reasonable stand-in until (if
+ * ever) the backend adds a socket; way simpler than the WebSocket
+ * reconnect/backoff machinery the old version needed, since there's
+ * nothing to reconnect.
+ *
+ * Optimistic send is still worth keeping even without a socket: the send
+ * request itself can be slow or fail, and showing the message immediately
+ * (pending, then confirmed or failed) is better than waiting on the round
+ * trip either way.
  */
-const SOCKET_ACK_GRACE_MS = 4000;
+export function useConversation(businessId: string | undefined) {
+  const queryClient = useQueryClient();
 
-export function useConversation(threadId: string | undefined) {
-  const { status: socketStatus, send: sendViaSocket, subscribe } = useChatSocket();
+  const query = useQuery({
+    queryKey: businessId ? messagesQueryKey(businessId) : ["chat", "messages", "none"],
+    queryFn: () => chatApi.getMessages(businessId as string),
+    enabled: !!businessId,
+    refetchInterval: 5000,
+  });
 
-  // Keyed by message id so duplicates (a message arriving via both an
-  // optimistic local add and a later socket echo, or via both history and
-  // a live event) collapse naturally into one entry instead of two.
-  const [messagesById, setMessagesById] = useState<Record<string, ChatMessage>>({});
-  const [oldestCursor, setOldestCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
-
-  const ackTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const loadOlder = useCallback(async () => {
-    if (!threadId || !hasMore || isLoadingHistory) return;
-
-    setIsLoadingHistory(true);
-    setHistoryError(null);
-    try {
-      const page = await chatApi.getMessages(threadId, oldestCursor ?? undefined);
-      setMessagesById((prev) => {
-        const next = { ...prev };
-        page.data.forEach((m) => {
-          next[m.id] = m;
-        });
-        return next;
-      });
-      setOldestCursor(page.nextCursor);
-      setHasMore(page.nextCursor !== null);
-    } catch {
-      setHistoryError("Couldn't load earlier messages. Try again.");
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  }, [threadId, hasMore, isLoadingHistory, oldestCursor]);
-
-  // Reset everything when switching threads — otherwise the previous
-  // thread's messages would flash briefly under the new thread's header.
-  useEffect(() => {
-    setMessagesById({});
-    setOldestCursor(null);
-    setHasMore(true);
-    setHistoryError(null);
-    if (threadId) loadOlder();
-    // loadOlder is intentionally excluded — it's recreated on every state
-    // change it causes, which would otherwise re-trigger this effect in a loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [threadId]);
-
-  // Live incoming messages for this thread.
-  useEffect(() => {
-    if (!threadId) return;
-    return subscribe((event) => {
-      if (event.type === "message" && event.message.threadId === threadId) {
-        setMessagesById((prev) => ({ ...prev, [event.message.id]: event.message }));
-        // A confirmed message arriving means whatever pending/failed
-        // optimistic entry it corresponds to is done needing its ack timer.
-        clearTimeout(ackTimers.current[event.message.id]);
-        delete ackTimers.current[event.message.id];
-      }
-    });
-  }, [threadId, subscribe]);
-
-  useEffect(() => {
-    const timers = ackTimers.current;
-    return () => {
-      Object.values(timers).forEach(clearTimeout);
-    };
-  }, []);
-
-  /**
-   * Optimistic send: the message shows up instantly with a temporary id
-   * and "pending" status. It tries the socket first (fast path); if the
-   * socket isn't open, or the socket accepted it but nothing confirms
-   * receipt within SOCKET_ACK_GRACE_MS, it falls back to REST — which
-   * either replaces the temp message with the real one, or marks it
-   * "failed" so the composer can offer to retry instead of the message
-   * just silently vanishing.
-   */
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!threadId || !text.trim()) return;
+      if (!businessId || !text.trim()) return;
 
+      const key = messagesQueryKey(businessId);
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const optimistic: ChatMessage = {
         id: tempId,
-        threadId,
+        businessId,
         senderId: "me", // placeholder — the component knows the real sender by comparing to the logged-in user, not by this value
         text,
         createdAt: new Date().toISOString(),
         clientStatus: "pending",
       };
-      setMessagesById((prev) => ({ ...prev, [tempId]: optimistic }));
 
-      async function sendOverRest() {
-        try {
-          const confirmed = await chatApi.sendMessage(threadId as string, text);
-          setMessagesById((prev) => {
-            const next = { ...prev };
-            delete next[tempId];
-            next[confirmed.id] = confirmed;
-            return next;
-          });
-        } catch {
-          setMessagesById((prev) => ({
-            ...prev,
-            [tempId]: { ...prev[tempId], clientStatus: "failed" },
-          }));
-        }
+      queryClient.setQueryData<ChatMessage[]>(key, (old) => [...(old ?? []), optimistic]);
+
+      try {
+        const confirmed = await chatApi.sendMessage(businessId, text);
+        queryClient.setQueryData<ChatMessage[]>(key, (old) => (old ?? []).map((m) => (m.id === tempId ? confirmed : m)));
+      } catch {
+        queryClient.setQueryData<ChatMessage[]>(key, (old) =>
+          (old ?? []).map((m) => (m.id === tempId ? { ...m, clientStatus: "failed" } : m)),
+        );
       }
-
-      const sentViaSocket = sendViaSocket({ type: "message", message: optimistic });
-      if (!sentViaSocket) {
-        await sendOverRest();
-        return;
-      }
-
-      // Socket claimed to send it — give it a moment to be confirmed by an
-      // echoed `message` event (handled in the subscribe effect above,
-      // which clears this timer). If nothing confirms it in time, assume
-      // the socket silently dropped it and fall back to the reliable path.
-      ackTimers.current[tempId] = setTimeout(sendOverRest, SOCKET_ACK_GRACE_MS);
     },
-    [threadId, sendViaSocket],
+    [businessId, queryClient],
   );
 
-  /** Re-attempts a message that ended up "failed" — reuses the same optimistic-send path with its original text. */
   const retryMessage = useCallback(
     (failedId: string) => {
-      const failed = messagesById[failedId];
+      if (!businessId) return;
+      const key = messagesQueryKey(businessId);
+      const failed = query.data?.find((m) => m.id === failedId);
       if (!failed) return;
-      setMessagesById((prev) => {
-        const next = { ...prev };
-        delete next[failedId];
-        return next;
-      });
+
+      queryClient.setQueryData<ChatMessage[]>(key, (old) => (old ?? []).filter((m) => m.id !== failedId));
       sendMessage(failed.text);
     },
-    [messagesById, sendMessage],
+    [businessId, query.data, queryClient, sendMessage],
   );
 
-  const messages = Object.values(messagesById).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-
   return {
-    messages,
-    isLoadingHistory,
-    historyError,
-    hasMore,
-    loadOlder,
+    messages: query.data ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
     sendMessage,
     retryMessage,
-    socketStatus,
   };
 }

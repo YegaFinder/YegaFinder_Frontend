@@ -1,35 +1,30 @@
 import { apiClient } from "@/lib/api-client";
-import type { ApiEnvelope } from "@/lib/api-response";
-import type { PaginatedResponse } from "@/types/api.types";
-import type { MerchantBooking, MyBookingsQuery, BookingDecision } from "../types/merchant-booking.types";
+import type { MerchantBooking, BookingDecision } from "../types/merchant-booking.types";
 
 /**
- * UNCONFIRMED endpoints — the Booking API is Sprint 5 backend work that
- * hasn't landed yet. Paths below follow the same /merchant/* convention
- * business-listings already uses, since that's the closest confirmed
- * precedent, but confirm all three with backend before relying on them.
+ * Confirmed against yegnafinder_api_schema_reference.md §6 and
+ * frontend_api_reference.md §3.4–3.6 — the real, documented contract.
+ *
+ * IMPORTANT: neither doc shows these endpoints wrapped in the
+ * {success, data, message, timestamp} envelope other parts of this app
+ * assume (ApiEnvelope) — every example response is the bare object or
+ * array directly. Built against that literal reading. If your backend
+ * actually wraps everything (some setups do this via a global
+ * interceptor even when docs show raw examples), these two functions are
+ * the only place that needs to change — just destructure `.data.data`
+ * instead of `.data`. Worth a quick real API check before trusting
+ * either reading blindly.
  */
 export const merchantBookingsApi = {
-  /** Backend: GET /merchant/bookings?page=&pageSize=&status= */
-  getMyBookings: async (query: MyBookingsQuery = {}): Promise<PaginatedResponse<MerchantBooking>> => {
-    const { data } = await apiClient.get<PaginatedResponse<MerchantBooking>>("/merchant/bookings", {
-      params: query,
-    });
+  /** Backend: GET /bookings/merchant — plain array, no pagination support documented. */
+  getMerchantBookings: async (): Promise<MerchantBooking[]> => {
+    const { data } = await apiClient.get<MerchantBooking[]>("/bookings/merchant");
     return data;
   },
 
-  /**
-   * Backend: PATCH /merchant/bookings/:id/status
-   * Deliberately a narrow "decide" endpoint (confirmed/rejected only)
-   * rather than a generic status setter — a merchant should never be able
-   * to set a booking to e.g. "completed" or "cancelled" from this screen,
-   * those transitions belong elsewhere (post-appointment flow, customer
-   * cancellation) and shouldn't share a code path with accept/reject.
-   */
+  /** Backend: PATCH /bookings/merchant/:id/accept or PATCH /bookings/merchant/:id/reject — no request body. */
   decideBooking: async (id: string, decision: BookingDecision): Promise<MerchantBooking> => {
-    const { data } = await apiClient.patch<ApiEnvelope<MerchantBooking>>(`/merchant/bookings/${id}/status`, {
-      status: decision,
-    });
-    return data.data;
+    const { data } = await apiClient.patch<MerchantBooking>(`/bookings/merchant/${id}/${decision}`);
+    return data;
   },
 };

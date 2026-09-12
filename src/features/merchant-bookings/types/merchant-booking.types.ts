@@ -1,47 +1,46 @@
 /**
- * The Booking API doesn't exist on the backend yet (it's a Sprint 5 item
- * per the sprint plan), so everything in this file is a best guess at the
- * eventual shape rather than something confirmed against real docs. Kept
- * deliberately small — just what BookingsTable actually needs to render —
- * so there's less to be wrong about once the real contract shows up.
+ * Reconciled against the real backend contract:
+ * yegnafinder_api_schema_reference.md §6, frontend_api_reference.md §3.
+ * Replaces the earlier version built before this contract existed —
+ * that version guessed wrong on nearly every field name and the status enum.
  */
 
-/**
- * "cancelled" is here even though nothing in this feature triggers it yet
- * (only a customer cancelling their own booking would cause it) — it's
- * included now so BookingStatusBadge and the status filter tabs don't need
- * a follow-up change the day cancellation ships on the customer side.
- */
-export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed";
+/** Matches the backend exactly, including casing — no "completed" status exists in the real API. */
+export type BookingStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
 
 /**
- * A booking as the merchant sees it — one customer's request against one
- * of the merchant's listings. `customerName`/`customerPhone` are flat
- * strings rather than a nested customer object because the merchant only
- * ever needs to *display* who's asking, never to look them up or link to
- * a customer profile — if that changes, this should become a proper
- * `customer: { id, name, phone }` object instead of flattening it out again.
+ * GET /bookings/merchant loads `customer` but explicitly NOT `business`
+ * (see the relations table in the schema reference, §6) — the backend
+ * doesn't tell a merchant which listing a booking is against, because a
+ * merchant only ever has ONE business (merchant management is the
+ * singular /merchant/profile, not a /merchant/listings collection — see
+ * the handoff notes for what this means for Sprint 3). There is therefore
+ * no `listingTitle` to show here; this booking IS against "your
+ * business," full stop, so the UI doesn't need a "which listing" column.
  */
 export interface MerchantBooking {
   id: string;
-  listingId: string;
-  listingTitle: string;
-  customerName: string;
-  customerPhone?: string;
-  /** ISO timestamp for the requested appointment slot, not when the booking was created. */
-  requestedAt: string;
+  customerId: string;
+  businessId: string;
+  /** ISO timestamp for the requested appointment slot. */
+  appointmentTime: string;
+  notes: string | null;
   status: BookingStatus;
-  /** Optional note the customer left when booking (e.g. "window seat if possible"). */
-  note?: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
   createdAt: string;
+  updatedAt: string;
 }
 
-export interface MyBookingsQuery {
-  page?: number;
-  pageSize?: number;
-  /** Omit to fetch every status; the UI's tabs each pass one specific status through here. */
-  status?: BookingStatus;
-}
+/** Matches the two real endpoints exactly — .../accept and .../reject — not one generic "set status" call with a body. */
+export type BookingDecision = "accept" | "reject";
 
-/** The only two transitions a merchant can make from the dashboard — accepting or declining a pending request. */
-export type BookingDecision = "confirmed" | "rejected";
+/** What each decision actually results in, once the backend confirms it — used for the optimistic update. */
+export const DECISION_RESULT_STATUS: Record<BookingDecision, BookingStatus> = {
+  accept: "ACCEPTED",
+  reject: "REJECTED",
+};

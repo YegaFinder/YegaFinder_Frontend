@@ -7,11 +7,10 @@ import { useBookingDecision } from "@/features/merchant-bookings/hooks/useBookin
 import { useMerchantBookings } from "@/features/merchant-bookings/hooks/useMerchantBookings";
 import { merchantBookingsApi } from "@/features/merchant-bookings/api/merchant-bookings.api";
 import type { MerchantBooking } from "@/features/merchant-bookings/types/merchant-booking.types";
-import type { PaginatedResponse } from "@/types/api.types";
 
 vi.mock("@/features/merchant-bookings/api/merchant-bookings.api", () => ({
   merchantBookingsApi: {
-    getMyBookings: vi.fn(),
+    getMerchantBookings: vi.fn(),
     decideBooking: vi.fn(),
   },
 }));
@@ -22,18 +21,14 @@ vi.mock("sonner", () => ({
 
 const booking: MerchantBooking = {
   id: "b1",
-  listingId: "l1",
-  listingTitle: "Weekend Brunch Menu",
-  customerName: "Abebe Kebede",
-  requestedAt: "2026-09-15T10:00:00.000Z",
-  status: "pending",
+  customerId: "c1",
+  businessId: "biz1",
+  appointmentTime: "2026-09-15T10:00:00.000Z",
+  notes: null,
+  status: "PENDING",
+  customer: { id: "c1", firstName: "Abebe", lastName: "Kebede", phone: null },
   createdAt: "2026-09-10T00:00:00.000Z",
-};
-
-const page: PaginatedResponse<MerchantBooking> = {
-  success: true,
-  data: [booking],
-  meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+  updatedAt: "2026-09-10T00:00:00.000Z",
 };
 
 function createWrapper() {
@@ -49,25 +44,27 @@ function createWrapper() {
 describe("useBookingDecision", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(merchantBookingsApi.getMyBookings).mockResolvedValue(page);
+    vi.mocked(merchantBookingsApi.getMerchantBookings).mockResolvedValue([booking]);
   });
 
   it("optimistically flips the booking's status before the request resolves", async () => {
-    // Never resolves during this test — lets us inspect the optimistic
-    // state before the real mutation would have settled.
     vi.mocked(merchantBookingsApi.decideBooking).mockImplementation(() => new Promise(() => {}));
 
     const wrapper = createWrapper();
     const { result: listResult } = renderHook(() => useMerchantBookings(), { wrapper });
     await waitFor(() => expect(listResult.current.bookings).toHaveLength(1));
 
+    // Switch to "All" so an ACCEPTED booking doesn't just fall out of the
+    // default PENDING-only view — we want to see the optimistic change.
+    act(() => listResult.current.setStatusFilter(undefined));
+
     const { result: decisionResult } = renderHook(() => useBookingDecision(), { wrapper });
 
     act(() => {
-      decisionResult.current.mutate({ id: "b1", decision: "confirmed" });
+      decisionResult.current.mutate({ id: "b1", decision: "accept" });
     });
 
-    await waitFor(() => expect(listResult.current.bookings[0].status).toBe("confirmed"));
+    await waitFor(() => expect(listResult.current.bookings[0]?.status).toBe("ACCEPTED"));
   });
 
   it("rolls back to the original status if the request fails", async () => {
@@ -80,10 +77,9 @@ describe("useBookingDecision", () => {
     const { result: decisionResult } = renderHook(() => useBookingDecision(), { wrapper });
 
     await act(async () => {
-      await decisionResult.current.mutateAsync({ id: "b1", decision: "confirmed" }).catch(() => {});
+      await decisionResult.current.mutateAsync({ id: "b1", decision: "accept" }).catch(() => {});
     });
 
-    // Rolled back to "pending", not left stuck on the optimistic "confirmed".
-    await waitFor(() => expect(listResult.current.bookings[0].status).toBe("pending"));
+    await waitFor(() => expect(listResult.current.bookings[0]?.status).toBe("PENDING"));
   });
 });
