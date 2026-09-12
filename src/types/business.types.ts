@@ -1,51 +1,86 @@
-﻿export interface Category {
+﻿export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  role: "CUSTOMER" | "MERCHANT" | "ADMIN" | "MODERATOR";
+  isVerified: boolean;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
 }
 
-/** Item shape returned by GET /businesses (list/discovery feed) */
-export interface BusinessListItem {
+export interface BusinessCategory {
   id: string;
   name: string;
-  category: string; // plain category NAME here — differs from detail's Category object
+  description: string | null;
+  subCategories?: BusinessCategory[];
+  parentCategory?: BusinessCategory | null;
+}
+
+export type Category = BusinessCategory;
+
+export interface BusinessHoursItem {
+  dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+  openTime: string | null;
+  closeTime: string | null;
+  isClosed: boolean;
+  is24Hours: boolean;
+  breakStartTime: string | null;
+  breakEndTime: string | null;
+}
+
+export interface Listing {
+  id: string;
+  businessName: string;
+  description: string | null;
   logoUrl: string | null;
   bannerUrl: string | null;
-  rating: number;
-  address: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  businessAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  websiteUrl: string | null;
+  socialMedia: Record<string, string>;
+  businessCategories: BusinessCategory[];
+  servicesOffered: string[];
+  businessHours: BusinessHoursItem[];
+  averageRating: number;
+  totalReviews: number;
+  isFeatured: boolean;
+  isProfileComplete: boolean;
+  isPublic: boolean;
+  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
+  listingStatus: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
+  listingSubmittedAt: string | null;
+  listingReviewedAt: string | null;
+  listingRejectionReason: string | null;
+  user: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
-/**
- * GET /businesses/nearby item shape — same fields as BusinessListItem plus
- * the coordinates and distance the nearby endpoint adds. Kept as its own
- * type rather than widening BusinessListItem so /businesses (no coords)
- * doesn't silently gain optional geo fields it never returns.
- * UNCONFIRMED: exact field names — ask backend when /businesses/nearby ships.
- */
-export interface NearbyBusinessItem extends BusinessListItem {
-  latitude: number;
-  longitude: number;
+export interface NearbyListing extends Listing {
   distanceKm: number;
 }
 
-export interface ContactInfo {
-  phone: string;
-  email: string;
-  website: string | null;
-  address: string;
+export interface PaginatedListingsResponse<T = Listing> {
+  listings: T[];
+  meta: { total: number; page: number; limit: number };
 }
 
-// businessHours item shape isn't documented yet — ask backend for the exact fields
-export type BusinessHourEntry = unknown;
-
-/** Full shape returned by GET /businesses/:id */
-export interface BusinessDetail {
+export interface Review {
   id: string;
-  name: string;
-  description: string;
-  category: Category;
-  subcategories: Category[];
-  contactInfo: ContactInfo;
-  businessHours: BusinessHourEntry[];
-  gallery: string[];
+  userId: string;
+  businessId: string;
   rating: number;
+  comment: string | null;
+  verifiedBookingId: string | null;
+  user: User;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
