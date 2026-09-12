@@ -1,13 +1,19 @@
-﻿import type { BusinessDetail } from "@/types/business.types";
+﻿import Image from "next/image";
+import type { Listing } from "../types/listing.types";
+import { RatingBadge } from "./RatingBadge";
+import { VerificationBadge } from "./VerificationBadge";
 
-// NOTE: BusinessDetail has no image field per the current backend
-// contract (Sprint 3 API doc). Revisit this once confirmed with backend.
-export function BusinessHero({ business }: { business: BusinessDetail }) {
+export function BusinessHero({ listing }: { listing: Listing }) {
   return (
-    <div className="relative h-40 w-full rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-muted flex items-end">
-      <div className="p-4">
-        <h1 className="text-2xl font-semibold">{business.name}</h1>
-        <p className="text-sm text-muted-foreground">{business.contactInfo.address}</p>
+    <div className="relative h-40 w-full rounded-xl overflow-hidden bg-muted">
+      {listing.bannerUrl && (
+        <Image src={listing.bannerUrl} alt={listing.businessName} fill className="object-cover" />
+      )}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+        <h1 className="text-2xl font-semibold text-white">{listing.businessName}</h1>
+        {listing.businessAddress && <p className="text-sm text-white/80">{listing.businessAddress}</p>}
+        <div className="mt-1"><RatingBadge rating={listing.averageRating} reviewCount={listing.totalReviews} /></div>
+        <div className="mt-1"><VerificationBadge status={listing.verificationStatus} /></div>
       </div>
     </div>
   );
