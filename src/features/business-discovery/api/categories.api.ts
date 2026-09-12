@@ -1,13 +1,14 @@
+
 import { apiClient } from "@/lib/api-client";
-import type { Category } from "@/types/business.types";
+import type { BusinessCategory } from "@/types/business.types";
 
 export const categoriesApi = {
   getCategories: async () => {
-    const { data } = await apiClient.get<{ data: Category[] }>("/categories");
+    const { data } = await apiClient.get<{ data: BusinessCategory[] }>("/categories");
     return data;
   },
-  getSubcategories: async (categoryId: string) => {
-    const { data } = await apiClient.get<{ data: Category[] }>(`/categories/${categoryId}/subcategories`);
+  getCategoryById: async (categoryId: string) => {
+    const { data } = await apiClient.get<{ data: BusinessCategory }>(`/categories/${categoryId}`);
     return data;
   },
 };

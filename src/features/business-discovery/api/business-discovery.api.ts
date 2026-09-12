@@ -1,6 +1,5 @@
 ﻿import { apiClient } from "@/lib/api-client";
-import type { BusinessListItem, BusinessDetail, NearbyBusinessItem } from "@/types/business.types";
-
+import type { Listing, NearbyListing, PaginatedListingsResponse } from "@/types/business.types";
 export interface GetBusinessesParams {
   category?: string; // unconfirmed: is this a category id or name? ask backend
   page?: number;
@@ -8,11 +7,11 @@ export interface GetBusinessesParams {
 }
 
 export interface GetNearbyParams {
-  latitude: number;
-  longitude: number;
-  /** Radius in kilometers. */
-  radiusKm?: number;
-  category?: string;
+  lat: number;
+  lng: number;
+  radius?: number;
+  page?: number;
+  limit?: number;
 }
 
 // Matches the doc's actual example payloads, not the app's existing
@@ -47,7 +46,7 @@ export const businessDiscoveryApi = {
    * the shell show real pins; full filter/sort query params can be added
    * here as /nearby grows past a shell. */
   getNearby: async (params: GetNearbyParams) => {
-    const { data } = await apiClient.get<NearbyBusinessResponse>("/businesses/nearby", { params });
-    return data;
-  },
+  const { data } = await apiClient.get<PaginatedListingsResponse<NearbyListing>>("/listings/nearby", { params });
+  return data;
+},
 };

@@ -9,18 +9,14 @@ import { useNearbyBusinesses } from "@/features/business-discovery/api/hooks/use
 import { useCategories } from "@/features/business-discovery/api/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
+import type { NearbyListing } from "@/types/business.types";
 
-// Addis Ababa city center — shown before the user grants (or denies)
-// location access, so the map isn't blank on first paint.
 const FALLBACK_CENTER = { latitude: 9.03, longitude: 38.74 };
 
-/**
- * Shell for the nearby/map screen: wires the shared Map, FilterBar, and
- * SortDropdown together with real geolocation and a minimal
- * GET /businesses/nearby call. "Shell" because the deeper polish — list/map
- * hover sync, pagination for dense areas, richer marker cards — is
- * follow-up work once the backend endpoint and design are finalized.
- */
+function categoryLabel(business: NearbyListing) {
+  return business.businessCategories[0]?.name ?? "Uncategorized";
+}
+
 export default function NearbyPage() {
   const { coords, status, error, locate } = useGeolocation();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
@@ -34,29 +30,27 @@ export default function NearbyPage() {
   const nearbyParams = useMemo(
     () =>
       coords
-        ? {
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            radiusKm: filters.maxDistanceKm,
-            category: filters.categoryId,
-          }
+        ? { lat: coords.latitude, lng: coords.longitude, radius: filters.maxDistanceKm }
         : null,
-    [coords, filters.maxDistanceKm, filters.categoryId],
+    [coords, filters.maxDistanceKm],
   );
 
   const { data, isLoading: businessesLoading } = useNearbyBusinesses(nearbyParams);
 
   const businesses = useMemo(() => {
-    let list = data?.data ?? [];
+    let list = data?.listings ?? [];
+    if (filters.categoryId) {
+      list = list.filter((b) => b.businessCategories.some((c) => c.id === filters.categoryId));
+    }
     if (filters.minRating) {
-      list = list.filter((b) => b.rating >= filters.minRating!);
+      list = list.filter((b) => b.averageRating >= filters.minRating!);
     }
     return [...list].sort((a, b) => {
-      if (sort === "rating") return b.rating - a.rating;
-      if (sort === "name") return a.name.localeCompare(b.name);
+      if (sort === "rating") return b.averageRating - a.averageRating;
+      if (sort === "name") return a.businessName.localeCompare(b.businessName);
       return a.distanceKm - b.distanceKm;
     });
-  }, [data, filters.minRating, sort]);
+  }, [data, filters.categoryId, filters.minRating, sort]);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -86,10 +80,10 @@ export default function NearbyPage() {
         zoom={coords ? 14 : 12}
         markers={businesses.map((b) => ({
           id: b.id,
-          latitude: b.latitude,
-          longitude: b.longitude,
-          label: b.name,
-          sublabel: `${b.category} · ${b.rating.toFixed(1)}★ · ${b.distanceKm.toFixed(1)} km`,
+          latitude: b.latitude ?? center.latitude,
+          longitude: b.longitude ?? center.longitude,
+          label: b.businessName,
+          sublabel: `${categoryLabel(b)} · ${b.averageRating.toFixed(1)}★ · ${b.distanceKm.toFixed(1)} km`,
           onSelect: () => setActiveId(b.id),
         }))}
         activeMarkerId={activeId}
@@ -115,9 +109,9 @@ export default function NearbyPage() {
             onMouseEnter={() => setActiveId(b.id)}
             className={`rounded-[14px] border p-3 text-sm ${activeId === b.id ? "border-yegna-primary" : ""}`}
           >
-            <div className="font-medium">{b.name}</div>
+            <div className="font-medium">{b.businessName}</div>
             <div className="text-muted-foreground">
-              {b.category} · {b.rating.toFixed(1)}★ · {b.distanceKm.toFixed(1)} km
+              {categoryLabel(b)} · {b.averageRating.toFixed(1)}★ · {b.distanceKm.toFixed(1)} km
             </div>
           </li>
         ))}
