@@ -5,24 +5,29 @@ import { Spinner } from "@/components/shared/form-feedback";
 import { ConversationView } from "./ConversationView";
 
 /**
- * KNOWN LIMITATION, not a bug: the real API has no endpoint for a merchant
- * to list which customers have messaged them, and POST /messages doesn't
- * take a recipient/customerId — only { businessId, text }. So this screen
- * shows ONE combined feed of every message sent to this business, from
- * every customer, with no way to separate them into per-customer threads.
+ * TWO KNOWN LIMITATIONS, not bugs:
  *
- * This needs backend to add something like GET /messages/merchant/threads,
- * or a customerId parameter on both the GET and POST, before "Messages"
- * works the way a merchant would expect once they have more than one
- * customer talking to them at once. Shipping this as a stopgap rather than
- * blocking the page entirely — but the banner below is deliberately not
- * subtle, so nobody mistakes this for a finished feature.
+ * 1. No per-customer threads: the real API has no endpoint for a merchant
+ *    to list which customers have messaged them, and GET/POST /messages
+ *    don't take a customerId — only { businessId, text }. So this screen
+ *    shows ONE combined feed of every message sent to this business, from
+ *    every customer, with no way to separate them into per-customer threads.
+ *
+ * 2. Merchants cannot reply at all: POST /messages throws 403 for any
+ *    non-Customer role (YegnaFinder_Backend_Reference.md §11) — there is
+ *    no merchant-reply endpoint anywhere in the backend today. The
+ *    composer is intentionally disabled here rather than shown active,
+ *    since an active composer would just produce an endless, confusing
+ *    "failed to send, tap to retry" loop that can never succeed.
+ *
+ * Both need backend work — a per-customer thread endpoint and a
+ * senderRole: 'business' write path — before this screen is a real
+ * merchant inbox. Shipping read-only as a stopgap rather than blocking
+ * the page entirely.
  *
  * ASSUMPTION: `profile.id` (from /merchant/profile) is the same id the
- * rest of the API calls `businessId`. Reasonable given merchant management
- * is singular (one business per merchant, no /merchant/listings
- * collection) — but not something I could directly confirm from the docs
- * provided. Worth a quick check against a real response.
+ * rest of the API calls `businessId` — reasonable given merchant
+ * management is singular, but worth a quick check against a real response.
  */
 export function MerchantMessagesScreen() {
   const { profile, isLoading } = useMerchantProfile();
@@ -38,11 +43,16 @@ export function MerchantMessagesScreen() {
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
-        All customer messages appear in one combined feed for now — the backend doesn&apos;t yet support separating
-        conversations by customer. Ask backend for a per-customer thread endpoint before relying on this for real use.
+        All customer messages appear in one combined feed, and replying isn&apos;t supported yet — the backend has
+        no way for a business to send a message. Reply to customers by phone or email for now.
       </div>
       <div className="flex-1 overflow-hidden">
-        <ConversationView businessId={profile?.id} title="All messages" />
+        <ConversationView
+          businessId={profile?.id}
+          title="All messages"
+          canSend={false}
+          disabledReason="Merchant replies aren't supported by the backend yet — reply by phone or email instead."
+        />
       </div>
     </div>
   );

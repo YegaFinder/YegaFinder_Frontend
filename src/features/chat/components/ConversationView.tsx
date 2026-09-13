@@ -10,11 +10,15 @@ interface ConversationViewProps {
   /** The business this conversation is with — there's no separate "thread id" in the real contract, this IS the identifier. */
   businessId: string | undefined;
   title?: string;
+  /** False for the merchant view — POST /messages 403s for any non-Customer role, so there's no working send path to offer. */
+  canSend?: boolean;
+  /** Shown in place of the composer when canSend is false. */
+  disabledReason?: string;
 }
 
-export function ConversationView({ businessId, title }: ConversationViewProps) {
+export function ConversationView({ businessId, title, canSend = true, disabledReason }: ConversationViewProps) {
   const currentUserId = useAuthStore((s) => s.user?.id);
-  const { messages, isLoading, isError, sendMessage, retryMessage } = useConversation(businessId);
+  const { messages, isLoading, isError, sendMessage, retryMessage } = useConversation(businessId, currentUserId);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const previousMessageCount = useRef(0);
@@ -52,7 +56,7 @@ export function ConversationView({ businessId, title }: ConversationViewProps) {
             <MessageBubble
               key={message.id}
               message={message}
-              isOwn={message.senderId === currentUserId}
+              isOwn={message.senderRole === "customer" && message.customerId === currentUserId}
               onRetry={retryMessage}
             />
           ))
@@ -60,7 +64,13 @@ export function ConversationView({ businessId, title }: ConversationViewProps) {
         <div ref={bottomRef} />
       </div>
 
-      <MessageComposer onSend={sendMessage} />
+      {canSend ? (
+        <MessageComposer onSend={sendMessage} />
+      ) : (
+        <div className="border-t border-yegna-border p-3 text-center text-xs text-muted-foreground">
+          {disabledReason ?? "Sending isn't available here."}
+        </div>
+      )}
     </div>
   );
 }
