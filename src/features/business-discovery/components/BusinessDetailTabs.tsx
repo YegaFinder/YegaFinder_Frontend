@@ -1,13 +1,27 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import type { Listing } from "../types/listing.types";
+import { ReviewForm } from "../../reviews/components/ReviewForm";
+import { ReviewsList } from "../../reviews/components/ReviewsList";
+import type { Review, NewReview } from "../../reviews/types/review.types";
 
-const TABS = ["Overview", "Services", "Contact"] as const;
+const TABS = ["Overview", "Services", "Contact", "Reviews"] as const;
 type Tab = (typeof TABS)[number];
 
 export function BusinessDetailTabs({ listing }: { listing: Listing }) {
   const [tab, setTab] = useState<Tab>("Overview");
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  const handleReviewSubmit = (newReview: NewReview) => {
+    const review: Review = {
+      id: crypto.randomUUID(),
+      authorName: "You",
+      createdAt: new Date().toISOString(),
+      ...newReview,
+    };
+    setReviews((prev) => [review, ...prev]);
+  };
 
   return (
     <div>
@@ -46,6 +60,12 @@ export function BusinessDetailTabs({ listing }: { listing: Listing }) {
             {listing.websiteUrl && <li>Website: {listing.websiteUrl}</li>}
             {listing.businessAddress && <li>Address: {listing.businessAddress}</li>}
           </ul>
+        )}
+        {tab === "Reviews" && (
+          <div className="space-y-6">
+            <ReviewForm onSubmit={handleReviewSubmit} />
+            <ReviewsList reviews={reviews} />
+          </div>
         )}
       </div>
     </div>

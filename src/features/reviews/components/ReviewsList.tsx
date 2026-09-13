@@ -1,4 +1,4 @@
-﻿import { StarRating } from "./StarRating";
+import { StarRating } from "./StarRating";
 import type { Review } from "../types/review.types";
 
 export function ReviewsList({ reviews }: { reviews: Review[] }) {
