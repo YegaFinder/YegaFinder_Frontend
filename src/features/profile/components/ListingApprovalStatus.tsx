@@ -22,6 +22,28 @@ export function ListingApprovalStatus({
     );
   }
 
+  // FIXED: listingStatus defaults to "PENDING" the moment a profile is
+  // created — before it's ever been submitted for review. The old code
+  // checked `listingStatus === "PENDING"` first, so a brand-new,
+  // never-submitted profile always hit the "pending review" branch below
+  // and the Submit button never rendered. listingSubmittedAt is only set
+  // by POST /merchant/listing/submit, so its absence is the real signal
+  // for "never submitted" — check that BEFORE the PENDING branch.
+  if (!profile.listingSubmittedAt) {
+    return (
+      <div className="flex flex-col gap-2 rounded-[10px] border border-yegna-border bg-yegna-background px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-muted-foreground">
+          {profile.isProfileComplete
+            ? "Ready to go live — submit your listing for admin review."
+            : "Complete your business profile (name, description, logo, address, phone) to submit for review."}
+        </span>
+        <Button size="sm" onClick={onSubmit} disabled={isSubmitting || !profile.isProfileComplete}>
+          {isSubmitting ? "Submitting..." : "Submit for review"}
+        </Button>
+      </div>
+    );
+  }
+
   if (profile.listingStatus === "PENDING") {
     return (
       <div className="flex items-center gap-2 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
@@ -50,18 +72,12 @@ export function ListingApprovalStatus({
     );
   }
 
-  // Not yet submitted at all (brand-new profile, listingStatus defaults to
-  // PENDING server-side on create — this branch covers a profile that's
-  // been created but never explicitly submitted; adjust the condition here
-  // if your backend testing shows PENDING-but-never-submitted needs its
-  // own distinct state).
+  // Approved but not (yet) public — e.g. an admin approved it before
+  // isPublic flipped, or it was manually unpublished. Fall back to the
+  // same "ready to submit again" affordance rather than showing nothing.
   return (
     <div className="flex flex-col gap-2 rounded-[10px] border border-yegna-border bg-yegna-background px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-muted-foreground">
-        {profile.isProfileComplete
-          ? "Ready to go live — submit your listing for admin review."
-          : "Complete your business profile (name, description, logo, address, phone) to submit for review."}
-      </span>
+      <span className="text-muted-foreground">Your listing isn&apos;t visible to customers right now.</span>
       <Button size="sm" onClick={onSubmit} disabled={isSubmitting || !profile.isProfileComplete}>
         {isSubmitting ? "Submitting..." : "Submit for review"}
       </Button>
