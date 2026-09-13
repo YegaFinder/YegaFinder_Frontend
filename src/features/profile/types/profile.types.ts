@@ -111,12 +111,18 @@ export interface MerchantProfile extends BaseProfile {
  * CreateBusinessDto / UpdateBusinessDto — the global ValidationPipe has
  * forbidNonWhitelisted:true, so any extra key 400s the whole request
  * (BACKEND_API_GUIDE.md §1.5, §5.1).
+ *
+ * FIXED: logoUrl/bannerUrl were listed here but do NOT exist on the real
+ * DTO (see the sample body in YegnaFinder_Backend_Reference.md §5.1) —
+ * they were previously included, which let BusinessDetailsForm submit
+ * them on every PUT /merchant/profile and 400 the entire business-details
+ * save. Logo/banner are written exclusively through
+ * merchantProfileApi.uploadLogo / uploadBanner (POST /merchant/logo,
+ * POST /merchant/banner). Do not add them back here.
  */
 export interface UpdateMerchantProfileRequest {
   businessName?: string;
   description?: string;
-  logoUrl?: string;
-  bannerUrl?: string;
   contactEmail?: string;
   contactPhone?: string;
   businessAddress?: string;

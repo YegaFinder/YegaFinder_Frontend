@@ -20,8 +20,8 @@ export function AppHeader({ role }: { role: "Customer" | "Merchant" }) {
     } catch {
       // Swallowed on purpose
     } finally {
-      storeLogout(); 
-      router.replace(ROUTES.LOGIN); 
+      storeLogout();
+      router.replace(ROUTES.LOGIN);
     }
   }
 
@@ -42,6 +42,8 @@ export function AppHeader({ role }: { role: "Customer" | "Merchant" }) {
             ) : (
               <>
                 <Link href={ROUTES.MERCHANT_DASHBOARD} className="text-sm font-medium hover:text-yegna-primary">Dashboard</Link>
+                <Link href={ROUTES.MERCHANT_BOOKINGS} className="text-sm font-medium hover:text-yegna-primary">Bookings</Link>
+                <Link href={ROUTES.MERCHANT_MESSAGES} className="text-sm font-medium hover:text-yegna-primary">Messages</Link>
                 <Link href={ROUTES.MERCHANT_PROFILE} className="text-sm font-medium hover:text-yegna-primary">Profile</Link>
               </>
             )}

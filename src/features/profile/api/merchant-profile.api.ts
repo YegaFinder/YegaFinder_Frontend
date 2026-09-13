@@ -22,7 +22,16 @@ export const merchantProfileApi = {
     return data.data;
   },
 
-  /** Backend: PUT /merchant/profile — send all changed fields; businessName is required every time */
+  /**
+   * Backend: PUT /merchant/profile — send all changed fields.
+   * NOTE: this DTO has no logoUrl/bannerUrl field (see the real sample
+   * body in YegnaFinder_Backend_Reference.md §5.1) and the global
+   * ValidationPipe runs with forbidNonWhitelisted:true, so sending either
+   * key 400s the *entire* request. Logo/banner are written exclusively
+   * through uploadLogo/uploadBanner below — never include them in this
+   * payload. UpdateMerchantProfileRequest no longer has those fields on
+   * its type, so this is now a compile error if someone tries.
+   */
   updateProfile: async (payload: UpdateMerchantProfileRequest): Promise<MerchantProfile> => {
     const { data } = await apiClient.put<ApiEnvelope<MerchantProfile>>("/merchant/profile", payload);
     return data.data;
@@ -54,23 +63,28 @@ export const merchantProfileApi = {
   return data.businessHours ?? [];
 },
 
-  /** Backend: POST /merchant/logo */
+  /**
+   * Backend: POST /merchant/logo — multipart, field "file".
+   * FIXED: previously set `headers: { "Content-Type": "multipart/form-data" }`
+   * manually, which strips out the boundary the browser/axios would
+   * otherwise generate for a FormData body — the request would send a
+   * `multipart/form-data` header with NO `boundary=...` parameter, which
+   * the backend's multipart parser cannot read at all. Let the browser
+   * set the header itself (same pattern as uploadGalleryPhotos below,
+   * which never had this bug).
+   */
   uploadLogo: async (file: File): Promise<MerchantProfile> => {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await apiClient.post<ApiEnvelope<MerchantProfile>>("/merchant/logo", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const { data } = await apiClient.post<ApiEnvelope<MerchantProfile>>("/merchant/logo", form);
     return data.data;
   },
 
-  /** Backend: POST /merchant/banner */
+  /** Backend: POST /merchant/banner — multipart, field "file". Same fix as uploadLogo above. */
   uploadBanner: async (file: File): Promise<MerchantProfile> => {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await apiClient.post<ApiEnvelope<MerchantProfile>>("/merchant/banner", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const { data } = await apiClient.post<ApiEnvelope<MerchantProfile>>("/merchant/banner", form);
     return data.data;
   },
 

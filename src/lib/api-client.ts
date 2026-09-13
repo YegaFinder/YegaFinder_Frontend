@@ -4,8 +4,14 @@ import { useAuthStore } from "@/store/auth-store";
 import { env } from "./env";
 
 const getBaseUrl = () => {
-  let url = env.NEXT_PUBLIC_API_URL || "https://yegnafinder-backend-production.up.railway.app/api/v1";
-  if (url && !url.endsWith("/api/v1")) {
+  // env.NEXT_PUBLIC_API_URL is always set here — env.ts validates it at
+  // startup (defaulting to http://localhost:8000/api/v1 in dev/test, or
+  // throwing a clear error at import time in production if it's missing).
+  // There is no legitimate case where it's empty by the time this runs,
+  // so there's no safe host to guess as a fallback — see .env.example /
+  // deployment config if the wrong URL is being used.
+  let url = env.NEXT_PUBLIC_API_URL;
+  if (!url.endsWith("/api/v1")) {
     url = url.replace(/\/$/, "") + "/api/v1";
   }
   return url;
@@ -91,6 +97,17 @@ apiClient.interceptors.response.use(
       !isAuthEndpoint(originalRequest.url)
     ) {
       originalRequest._retry = true;
+
+      // A guest with no refresh token was never logged in — there is no
+      // session to expire, so this 401 is just "this endpoint requires
+      // auth" (e.g. the categories/businesses endpoints that are missing
+      // @Public() server-side, per the backend reference doc). Reject
+      // as-is and let the caller decide how to degrade (e.g. a
+      // logged-out fallback), instead of wiping storage and hard-
+      // redirecting a guest off whatever public page they were on.
+      if (!getRefreshToken()) {
+        return Promise.reject(error);
+      }
 
       try {
         const accessToken = await refreshAccessToken();

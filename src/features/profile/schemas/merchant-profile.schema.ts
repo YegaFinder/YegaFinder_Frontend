@@ -23,9 +23,12 @@ export const DAYS_OF_WEEK = [
 export const businessDetailsSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
   description: z.string().max(2000, "Keep it under 2000 characters").optional().or(z.literal("")),
-  businessCategories: z.array(z.string().min(1)).optional(),
-  logoUrl: z.string().optional().or(z.literal("")),
-  bannerUrl: z.string().optional().or(z.literal("")),
+  // Category UUIDs selected from the real GET /categories list — NOT
+  // free-text tags. Still worth sending (harmless, forward-compatible)
+  // even though the backend currently discards businessCategories on
+  // save (B1, see YegnaFinder_Backend_Reference.md §16) — this is a
+  // backend persistence bug, not something the frontend can work around.
+  businessCategories: z.array(z.string().uuid()).optional(),
   taxId: z.string().max(50, "Keep it under 50 characters").optional().or(z.literal("")),
 });
 export type BusinessDetailsFormValues = z.infer<typeof businessDetailsSchema>;

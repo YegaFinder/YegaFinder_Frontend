@@ -7,7 +7,6 @@ export const ROUTES = {
   RESET_PASSWORD: "/reset-password",
   VERIFY_OTP: "/verify-otp",
 
-  // Legal (public, unauthenticated)
   TERMS: "/terms",
   PRIVACY: "/privacy",
 
@@ -23,6 +22,7 @@ export const ROUTES = {
   MERCHANT_PROFILE: "/dashboard/profile",
   MERCHANT_BOOKINGS: "/dashboard/bookings",
   MERCHANT_LISTINGS: "/dashboard/listings",
-
+  MERCHANT_MESSAGES: "/dashboard/messages",
+  MESSAGES: "/messages",
   ADMIN_DASHBOARD: "/admin",
 } as const;
