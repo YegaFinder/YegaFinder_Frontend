@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Bookmark, User, LayoutDashboard } from "lucide-react";
+import { Home, Bookmark, User, LayoutDashboard, CalendarCheck, MessageCircle } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,8 @@ const CUSTOMER_ITEMS: NavItem[] = [
 
 const MERCHANT_ITEMS: NavItem[] = [
   { href: ROUTES.MERCHANT_DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
+  { href: ROUTES.MERCHANT_BOOKINGS, label: "Bookings", icon: CalendarCheck },
+  { href: ROUTES.MERCHANT_MESSAGES, label: "Messages", icon: MessageCircle },
   { href: ROUTES.MERCHANT_PROFILE, label: "Profile", icon: User },
 ];
 
@@ -44,9 +46,6 @@ export function MobileBottomNav({ role }: { role: "Customer" | "Merchant" }) {
       aria-label="Primary"
     >
       {items.map(({ href, label, icon: Icon }) => {
-        // Exact match for the app-home "/" style root of each role,
-        // startsWith for nested routes (e.g. /profile/edit) so the tab
-        // stays highlighted while you're anywhere under it.
         const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
         return (
@@ -56,7 +55,6 @@ export function MobileBottomNav({ role }: { role: "Customer" | "Merchant" }) {
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors",
-              // 44px+ tap target height (py-2 + icon + label comfortably clears it)
               "min-h-[56px]",
               isActive ? "text-yegna-primary" : "text-muted-foreground hover:text-foreground",
             )}
