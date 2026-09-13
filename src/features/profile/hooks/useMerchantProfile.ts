@@ -89,6 +89,22 @@ export function useMerchantProfile() {
     },
   });
 
+  const submitMutation = useMutation({
+    mutationFn: () => merchantProfileApi.submitForApproval(),
+    onSuccess: async (data) => {
+      queryClient.setQueryData(MERCHANT_PROFILE_QUERY_KEY, data);
+      await invalidate();
+      toast.success("Submitted for review — you'll be notified once it's approved.");
+    },
+    onError: (error) => {
+      toast.error(
+        getErrorMessage(error, {
+          400: "Finish your business profile (name, description, logo, address, and phone) before submitting.",
+        }),
+      );
+    },
+  });
+
   return {
     profile: query.data,
     isLoading: query.isLoading,
@@ -105,5 +121,7 @@ export function useMerchantProfile() {
 
     updateBusinessHours: updateHoursMutation.mutateAsync,
     isUpdatingHours: updateHoursMutation.isPending,
+    submitForApproval: submitMutation.mutateAsync,
+    isSubmitting: submitMutation.isPending,
   };
 }
