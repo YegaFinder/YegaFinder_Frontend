@@ -9,12 +9,45 @@ import { useNearbyBusinesses } from "@/features/business-discovery/api/hooks/use
 import { useCategories } from "@/features/business-discovery/api/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
-import type { NearbyListing } from "@/types/business.types";
+import type { NearbyListing, BusinessHoursItem } from "@/types/business.types";
 
 const FALLBACK_CENTER = { latitude: 9.03, longitude: 38.74 };
 
 function categoryLabel(business: NearbyListing) {
   return business.businessCategories[0]?.name ?? "Uncategorized";
+}
+
+/**
+ * Client-side "is this business open right now" check, based on the
+ * merchant's saved business hours. The backend has no "open now" query
+ * support (see YegnaFinder_Backend_Reference.md — no such filter exists
+ * on /listings/nearby), so this runs entirely against whatever
+ * businessHours came back on each listing, using the browser's local time.
+ */
+function isOpenNow(hours: BusinessHoursItem[] | undefined): boolean {
+  if (!hours || hours.length === 0) return false;
+  const now = new Date();
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+  const today = hours.find((h) => h.dayOfWeek === dayNames[now.getDay()]);
+  if (!today || today.isClosed) return false;
+  if (today.is24Hours) return true;
+  if (!today.openTime || !today.closeTime) return false;
+
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  const toMinutes = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const open = toMinutes(today.openTime);
+  const close = toMinutes(today.closeTime);
+
+  if (today.breakStartTime && today.breakEndTime) {
+    const breakStart = toMinutes(today.breakStartTime);
+    const breakEnd = toMinutes(today.breakEndTime);
+    if (minutesNow >= breakStart && minutesNow < breakEnd) return false;
+  }
+
+  return minutesNow >= open && minutesNow < close;
 }
 
 export default function NearbyPage() {
@@ -45,12 +78,15 @@ export default function NearbyPage() {
     if (filters.minRating) {
       list = list.filter((b) => b.averageRating >= filters.minRating!);
     }
+    if (filters.openNow) {
+      list = list.filter((b) => isOpenNow(b.businessHours));
+    }
     return [...list].sort((a, b) => {
       if (sort === "rating") return b.averageRating - a.averageRating;
       if (sort === "name") return a.businessName.localeCompare(b.businessName);
       return a.distanceKm - b.distanceKm;
     });
-  }, [data, filters.categoryId, filters.minRating, sort]);
+  }, [data, filters.categoryId, filters.minRating, filters.openNow, sort]);
 
   return (
     <div className="flex flex-col gap-4 p-4">
