@@ -6,6 +6,7 @@ import type {
   CreateMerchantProfileRequest,
   UpdateMerchantProfileRequest,
   UpdateBusinessHoursRequest,
+  GalleryPhoto,
 } from "../types/profile.types";
 
 export const merchantProfileApi = {
@@ -37,24 +38,21 @@ export const merchantProfileApi = {
    * stops being hit — safe to delete then, but harmless to leave.
    */
   updateBusinessHours: async (payload: UpdateBusinessHoursRequest): Promise<BusinessHours[]> => {
-    const { data } = await apiClient.put<
-      ApiEnvelope<BusinessHours[] | { success: boolean; businessHours: BusinessHours[] }>
-    >("/merchant/business-hours", payload);
-
-    const inner = data.data;
-    if (inner && typeof inner === "object" && !Array.isArray(inner) && "businessHours" in inner) {
-      return inner.businessHours;
-    }
-    return inner as BusinessHours[];
-  },
+  const { data } = await apiClient.put<{
+    success: boolean;
+    businessHours: BusinessHours[];
+  }>("/merchant/business-hours", payload);
+  return data.businessHours ?? [];
+},
 
   /** Backend: GET /merchant/business-hours */
   getBusinessHours: async (): Promise<BusinessHours[]> => {
-    const { data } = await apiClient.get<ApiEnvelope<{ businessHours: BusinessHours[] }>>("/merchant/business-hours");
-    // Backend returns { businessHours: [...] } wrapped in the envelope
-    const inner = data.data as unknown as { businessHours: BusinessHours[] };
-    return inner?.businessHours ?? (data.data as unknown as BusinessHours[]);
-  },
+  const { data } = await apiClient.get<{
+    success: boolean;
+    businessHours: BusinessHours[];
+  }>("/merchant/business-hours");
+  return data.businessHours ?? [];
+},
 
   /** Backend: POST /merchant/logo */
   uploadLogo: async (file: File): Promise<MerchantProfile> => {
@@ -77,14 +75,38 @@ export const merchantProfileApi = {
   },
 
   /** Backend: GET /merchant/gallery */
-  getGallery: async (): Promise<unknown[]> => {
-    const { data } = await apiClient.get<ApiEnvelope<{ gallery: unknown[] }>>("/merchant/gallery");
-    const inner = data.data as unknown as { gallery: unknown[] };
-    return inner?.gallery ?? [];
-  },
+  getGallery: async (): Promise<GalleryPhoto[]> => {
+  const { data } = await apiClient.get<{
+    success: boolean;
+    gallery: GalleryPhoto[];
+  }>("/merchant/gallery");
+  return data.gallery ?? [];
+},
 
   /** Backend: DELETE /merchant/gallery/:id */
   deleteGalleryPhoto: async (photoId: string): Promise<void> => {
     await apiClient.delete(`/merchant/gallery/${photoId}`);
+  },
+
+  uploadGalleryPhotos: async (files: File[]): Promise<GalleryPhoto[]> => {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+  const { data } = await apiClient.post<{
+    success: boolean;
+    message: string;
+    gallery: GalleryPhoto[];
+  }>("/merchant/gallery", form);
+  return data.gallery;
+},
+  /**
+   * ADDED — Backend: POST /merchant/listing/submit (no body). Flips
+   * listingStatus back to PENDING and isPublic to false, then waits on
+   * an Admin/Moderator to approve it via /admin/listings/:id/approve.
+   * Throws 400 if isProfileComplete is false — surface that as a clear
+   * "finish your profile first" message, not a generic error.
+   */
+  submitForApproval: async (): Promise<MerchantProfile> => {
+    const { data } = await apiClient.post<ApiEnvelope<MerchantProfile>>("/merchant/listing/submit");
+    return data.data;
   },
 };

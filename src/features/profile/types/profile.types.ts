@@ -1,5 +1,5 @@
 ﻿import type { User } from "@/features/auth/types/auth.types";
-
+import type { BusinessCategory } from "@/types/business.types";
 export interface BaseProfile {
   id: string;
   user: User;
@@ -61,6 +61,8 @@ export interface SocialMediaLinks {
   tiktok?: string;
 }
 
+export type ListingStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export interface MerchantProfile extends BaseProfile {
   businessName: string;
   description?: string;
@@ -76,7 +78,12 @@ export interface MerchantProfile extends BaseProfile {
   deliveryRadius?: number;
   serviceAreas?: string[];
   socialMedia: SocialMediaLinks;
-  businessCategories: string[];
+  // FIXED: was string[] — the backend actually returns the full category
+  // objects here (Business.businessCategories is a ManyToMany relation).
+  // In practice this is always [] today because of the businessCategories
+  // persistence bug (BACKEND_API_GUIDE.md §5.1) — this type change doesn't
+  // fix that, it just stops lying about the shape for whenever it is fixed.
+  businessCategories: BusinessCategory[];
   servicesOffered: BusinessService[];
   businessHours: BusinessHours[];
   isProfileComplete: boolean;
@@ -87,8 +94,17 @@ export interface MerchantProfile extends BaseProfile {
   averageRating: number;
   totalReviews: number;
   isFeatured: boolean;
-}
 
+  // ADDED — these existed on the real BusinessResponseDto all along but
+  // were missing from this type, which meant nothing in the merchant UI
+  // could show approval/rejection state or gate a "submit for review"
+  // button. Populated by GET/POST/PUT /merchant/profile.
+  listingStatus: ListingStatus;
+  isPublic: boolean;
+  listingSubmittedAt?: string;
+  listingReviewedAt?: string;
+  listingRejectionReason?: string;
+}
 /**
  * Payload shapes for the two merchant-profile write endpoints.
  * Deliberately restricted to fields that actually exist on
@@ -141,6 +157,17 @@ export interface UpdateBusinessHoursRequest {
     breakStartTime?: string;
     breakEndTime?: string;
   }>;
+}
+
+export interface GalleryPhoto {
+  id: string;
+  mediaUrl: string;
+  mediaType: string;
+  caption?: string;
+  isFeatured: boolean;
+  businessId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ========================================================

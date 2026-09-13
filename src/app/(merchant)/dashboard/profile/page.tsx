@@ -17,6 +17,7 @@ import { PromotionsManager } from "@/features/profile/components/PromotionsManag
 import { SubscriptionPlanSection } from "@/features/profile/components/SubscriptionPlanSection";
 import { AnalyticsDashboard } from "@/features/profile/components/AnalyticsDashboard";
 import { VerificationBadge } from "@/features/profile/components/VerificationBadge";
+import { ListingApprovalStatus } from "@/features/profile/components/ListingApprovalStatus";
 
 import {
   toBusinessHoursPayload,
@@ -64,6 +65,8 @@ export default function MerchantProfilePage() {
     isUpdating,
     updateBusinessHours,
     isUpdatingHours,
+    submitForApproval, 
+    isSubmitting
   } = useMerchantProfile();
 
  const { staff } = useTeamMembers({ enabled: !profileNotCreatedYet });
@@ -191,7 +194,15 @@ async function handleSaveReach(values: BusinessReachFormValues) {
           </div>
         </div>
       </div>
-
+        
+        {profile && (
+        <ListingApprovalStatus
+          profile={profile}
+          onSubmit={() => submitForApproval()}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      
       {profileNotCreatedYet && (
         <div className="rounded-[10px] border border-yegna-primary/30 bg-yegna-primary/5 px-4 py-2.5 text-sm text-yegna-primary">
           You haven&apos;t set up your business profile yet — fill in your business details below to get started.
