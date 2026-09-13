@@ -1,68 +1,87 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { useListings } from "../api/hooks/useListings";
+import { useSearchListings } from "../api/hooks/useSearchListings";
+import { useCategories } from "../api/hooks/useCategories";
 import { BusinessCard } from "./BusinessCard";
+import { FilterBar, type FilterBarValue } from "@/components/shared/filter-bar";
+import { SortDropdown, type SortOption } from "@/components/shared/sort-dropdown";
 import type { Listing } from "../types/listing.types";
 
-type SortOption = "rating" | "name";
-
-// Local, self-contained filter/sort UI for now — swap to the shared
-// FilterBar/SortDropdown components once that PR actually merges.
-// Client-side only: backend has no /search endpoint yet, and /listings
-// already returns the full unpaginated set, so filtering/sorting here
-// is a real working search, not a placeholder.
+/**
+ * FIXED: this used to keep its own local filter/sort UI with a comment
+ * saying "swap to the shared FilterBar/SortDropdown once that PR merges"
+ * — it never did, which meant the shared Sprint 4 geo/filter infra
+ * (built specifically to be reused by both /search and /nearby) only
+ * ever had one consumer. Now uses the same components /nearby uses.
+ *
+ * Also FIXED: the old comment here claimed "backend has no /search
+ * endpoint yet" and "/listings already returns the full unpaginated
+ * set" — both false. GET /listings/search?q= exists and is public
+ * (YegnaFinder_Backend_Reference.md §7.2), and GET /listings is
+ * paginated (§7.1). This now calls the real search endpoint with a
+ * server-side query instead of client-filtering whatever happened to be
+ * on page 1 of the plain listings feed — the old approach would quietly
+ * miss businesses as the catalog grows past one page.
+ *
+ * Distance and "open now" aren't wired up here: /search has no user
+ * coordinates to sort/filter by, and this feature's local Listing type
+ * (types/listing.types.ts) types businessHours as `unknown[]`, so
+ * there's nothing typed to check "is this open now" against. FilterBar
+ * hides both sections via hideDistance/hideOpenNow rather than faking
+ * controls that can't actually do anything.
+ */
 export function SearchFeed() {
   const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<FilterBarValue>({});
   const [sort, setSort] = useState<SortOption>("rating");
-  const { data, isLoading, isError } = useListings();
+
+  const { data, isLoading, isError } = useSearchListings(query);
+  const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
 
   const listings = useMemo(() => data?.listings ?? [], [data]);
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
     let filtered = listings;
 
-    if (q) {
-      filtered = filtered.filter(
-        (l) =>
-          l.businessName.toLowerCase().includes(q) ||
-          l.description?.toLowerCase().includes(q) ||
-          l.businessCategories?.some((c) => c.name.toLowerCase().includes(q))
-      );
+    if (filters.minRating) {
+      filtered = filtered.filter((l) => l.averageRating >= filters.minRating!);
     }
 
     return [...filtered].sort((a, b) =>
-      sort === "rating"
-        ? b.averageRating - a.averageRating
-        : a.businessName.localeCompare(b.businessName)
+      sort === "rating" ? b.averageRating - a.averageRating : a.businessName.localeCompare(b.businessName),
     );
-  }, [listings, query, sort]);
+  }, [listings, filters.minRating, sort]);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search businesses..."
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search businesses..."
+        className="w-full rounded-md border px-3 py-2 text-sm"
+      />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <FilterBar
+          value={filters}
+          onChange={setFilters}
+          categories={categoriesData?.data ?? []}
+          categoriesLoading={categoriesLoading}
+          hideDistance
+          hideOpenNow
+          className="flex-1"
         />
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortOption)}
-          className="rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="rating">Sort: Highest rated</option>
-          <option value="name">Sort: Name (A-Z)</option>
-        </select>
+        <SortDropdown value={sort} onChange={setSort} distanceAvailable={false} />
       </div>
 
       {isLoading && <p className="text-muted-foreground">Loading…</p>}
       {isError && <p className="text-destructive">Couldn&apos;t load businesses.</p>}
-      {!isLoading && results.length === 0 && (
-        <p className="text-muted-foreground">No businesses match &quot;{query}&quot;.</p>
+      {!isLoading && !isError && results.length === 0 && (
+        <p className="text-muted-foreground">
+          {query.trim() ? <>No businesses match &quot;{query}&quot;.</> : "No businesses found."}
+        </p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

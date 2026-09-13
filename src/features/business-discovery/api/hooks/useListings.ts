@@ -1,9 +1,9 @@
 ﻿import { useQuery } from "@tanstack/react-query";
-import { listingsApi } from "../listings.api";
+import { listingsApi, type GetListingsParams } from "../listings.api";
 
-export function useListings() {
+export function useListings(params?: GetListingsParams) {
   return useQuery({
-    queryKey: ["listings"],
-    queryFn: () => listingsApi.getListings(),
+    queryKey: ["listings", params],
+    queryFn: () => listingsApi.getListings(params),
   });
 }
