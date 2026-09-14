@@ -1,31 +1,42 @@
-﻿import { OrderSummary } from "@/features/booking/components/OrderSummary";
+﻿"use client";
 
-// UI shell only — no real payment provider wired yet (needs backend +
-// provider decision, per Sprint 6 handoff). This lets the flow feel
-// complete end-to-end for demo purposes.
+import { useSearchParams, useRouter } from "next/navigation";
+import { useInitiatePayment } from "@/features/payments/api/hooks/useInitiatePayment";
+import { useVerifyPayment } from "@/features/payments/api/hooks/useVerifyPayment";
+
 export default function CheckoutPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("bookingId");
+  const txRef = searchParams.get("txRef"); // present on return-from-Chapa redirect
+
+  const { mutate: initiate, isPending } = useInitiatePayment();
+  const { data: payment } = useVerifyPayment(txRef, { pollWhilePending: true });
+
+  if (payment?.status === "PAID" && bookingId) {
+    router.push(`/bookings/${bookingId}`);
+  }
+
   return (
     <main className="container mx-auto px-4 py-6 max-w-md space-y-6">
-      <h1 className="text-2xl font-semibold">Checkout</h1>
+      <h1 className="text-2xl font-semibold">Complete Booking Payment</h1>
 
-      {/* Placeholder data until this is wired to real selection state
-          carried over from ServiceSelector/DateTimePicker */}
-      <OrderSummary
-        businessName="Selected business"
-        service={{ id: "placeholder", name: "Selected service" }}
-      />
+      {payment && (
+        <div className="rounded-lg border p-4 text-sm">
+          Status: <strong>{payment.status}</strong> — {payment.amount} {payment.currency}
+        </div>
+      )}
 
-      <div className="rounded-lg border p-4 text-center text-sm text-muted-foreground">
-        Payment integration coming soon
-      </div>
-
-      <button
-        type="button"
-        disabled
-        className="w-full rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm opacity-50 cursor-not-allowed"
-      >
-        Confirm and pay
-      </button>
+      {!txRef && (
+        <button
+          type="button"
+          disabled={!bookingId || isPending}
+          onClick={() => bookingId && initiate({ bookingId })}
+          className="w-full rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm disabled:opacity-50"
+        >
+          {isPending ? "Redirecting…" : "Pay with Chapa"}
+        </button>
+      )}
     </main>
   );
 }

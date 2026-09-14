@@ -1,18 +1,14 @@
 ﻿"use client";
 
 import { cn } from "@/lib/utils";
-import type { ListingCategory } from "../types/listing.types";
+import type { BusinessCategory } from "@/types/business.types";
 
 interface CategoryChipProps {
-  categories: ListingCategory[];
+  categories: BusinessCategory[];
   activeId?: string;
   onSelect: (id: string | undefined) => void;
 }
 
-// No GET /categories endpoint exists on the backend yet, so this now
-// receives categories as a prop (derived from fetched listings in
-// DiscoveryFeed) instead of fetching them itself. Swap back to a real
-// fetch once backend ships one.
 export function CategoryChip({ categories, activeId, onSelect }: CategoryChipProps) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-2">

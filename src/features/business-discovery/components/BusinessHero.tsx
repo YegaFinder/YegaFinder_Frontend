@@ -1,4 +1,5 @@
 ﻿import Image from "next/image";
+<<<<<<< HEAD
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import type { Listing } from "../types/listing.types";
@@ -16,11 +17,19 @@ import { VerificationBadge } from "./VerificationBadge";
  * chat feature to be merged in for the destination route to exist.
  */
 export function BusinessHero({ listing }: { listing: Listing }) {
+=======
+import type { Business } from "@/types/business.types";
+import { RatingBadge } from "./RatingBadge";
+import { VerificationBadge } from "./VerificationBadge";
+
+export function BusinessHero({ business }: { business: Business }) {
+>>>>>>> a521e4344a7a620d64151f70c742fd38d4449b16
   return (
     <div className="relative h-40 w-full rounded-xl overflow-hidden bg-muted">
-      {listing.bannerUrl && (
-        <Image src={listing.bannerUrl} alt={listing.businessName} fill className="object-cover" />
+      {business.bannerUrl && (
+        <Image src={business.bannerUrl} alt={business.businessName} fill className="object-cover" />
       )}
+<<<<<<< HEAD
       <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 to-transparent p-4">
         <div>
           <h1 className="text-2xl font-semibold text-white">{listing.businessName}</h1>
@@ -35,6 +44,13 @@ export function BusinessHero({ listing }: { listing: Listing }) {
           <MessageCircle className="size-4" />
           Message
         </Link>
+=======
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+        <h1 className="text-2xl font-semibold text-white">{business.businessName}</h1>
+        {business.businessAddress && <p className="text-sm text-white/80">{business.businessAddress}</p>}
+        <div className="mt-1"><RatingBadge rating={business.averageRating} reviewCount={business.totalReviews} /></div>
+        <div className="mt-1"><VerificationBadge status={business.verificationStatus} /></div>
+>>>>>>> a521e4344a7a620d64151f70c742fd38d4449b16
       </div>
     </div>
   );

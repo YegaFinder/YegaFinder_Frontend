@@ -129,7 +129,7 @@ function MerchantImageUploadField({
 
 export function BusinessDetailsForm({ profile, onSubmit, isSaving }: BusinessDetailsFormProps) {
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
-  const availableCategories = categoriesData?.data ?? [];
+  const availableCategories = categoriesData ?? [];
 
   const {
     register,

@@ -37,16 +37,16 @@ export function FavoritesList() {
           <div className="flex items-center gap-3">
             <Heart className="size-4 shrink-0 fill-yegna-primary text-yegna-primary" />
             <p className="text-sm font-medium text-foreground">
-              {favorite.business?.businessName ?? `Business ${favorite.businessId.slice(0, 8)}`}
+              {favorite.businessName}
             </p>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={`Remove ${favorite.business?.businessName ?? "favorite"}`}
+            aria-label={`Remove ${favorite.businessName}`}
             disabled={isRemoving}
-            onClick={() => removeFavorite(favorite.businessId)}
+            onClick={() => removeFavorite(favorite.id)}
           >
             {isRemoving ? <Spinner className="size-4" /> : <Trash2 className="size-4" />}
           </Button>

@@ -1,15 +1,12 @@
 export type Role = "Customer" | "Merchant" | "Moderator" | "Admin";
 
-/** Matches UserResponseDto exactly (BACKEND_INTEGRATION_GUIDE.md §5) —
- * every field here except `phone` is non-optional on the real response. */
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
-  role: Role;
-  isVerified: boolean;
+  phone: string | null;
+  role: Role; // exact case: "Customer" | "Merchant" | "Moderator" | "Admin"
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isActive: boolean;
@@ -20,13 +17,10 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
-  role: Role;
+  otp?: string; // only present in TEST_MODE on register
 }
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
+export interface LoginRequest { email: string; password: string; }
 
 export interface RegisterRequest {
   firstName: string;
@@ -38,21 +32,7 @@ export interface RegisterRequest {
   agreedToTerms: boolean;
 }
 
-export interface VerifyOtpRequest {
-  email: string;
-  otp: string;
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-export interface ResetPasswordRequest {
-  email: string;
-  otp: string;
-  newPassword: string;
-}
-
-export interface DevOtpResponse {
-  otp?: string;
-}
+export interface VerifyOtpRequest { email: string; otp: string; }
+export interface ForgotPasswordRequest { email: string; }
+export interface ResetPasswordRequest { email: string; otp: string; newPassword: string; }
+export interface DevOtpResponse { otp?: string; }
