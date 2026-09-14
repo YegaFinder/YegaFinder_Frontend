@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+﻿import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -39,6 +39,8 @@ const mockProfile: MerchantProfile = {
   totalReviews: 0,
   isFeatured: false,
   isProfileComplete: false,
+  listingStatus: "PENDING",
+  isPublic: false,
   createdAt: "",
   updatedAt: "",
   user: {} as never,
@@ -86,9 +88,6 @@ describe("useMerchantProfile", () => {
 
     const { result } = renderHook(() => useMerchantProfile(), { wrapper: createWrapper() });
 
-    // The hook retries once on non-404 errors before settling — TanStack
-    // Query's default retry delay (~1s) means this needs more headroom
-    // than waitFor's default 1000ms timeout.
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 3000 });
 
     expect(result.current.isError).toBe(true);
@@ -96,9 +95,6 @@ describe("useMerchantProfile", () => {
   });
 
   it("updates the cache and uses the shared query key after a successful update", async () => {
-    // Model a real backend: the mock actually persists the change, so
-    // the invalidate-triggered refetch after the mutation reflects it
-    // instead of overwriting the update with stale data.
     let currentProfile: MerchantProfile = mockProfile;
     vi.mocked(merchantProfileApi.getProfile).mockImplementation(() => Promise.resolve(currentProfile));
     vi.mocked(merchantProfileApi.updateProfile).mockImplementation(async () => {

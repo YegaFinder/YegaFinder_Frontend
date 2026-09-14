@@ -9,8 +9,6 @@ interface ReviewFormProps {
   isSubmitting?: boolean;
 }
 
-// Not wired to a real API call yet — backend has no reviews endpoint.
-// onSubmit is the seam: swap the caller to a real useMutation once one exists.
 export function ReviewForm({ onSubmit, isSubmitting = false }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");

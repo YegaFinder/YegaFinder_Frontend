@@ -79,7 +79,7 @@ export interface Business {
 }
 
 export interface NearbyBusiness extends Business {
-  distanceKm: number;
+  distanceKm?: number;
 }
 
 // Bookings
