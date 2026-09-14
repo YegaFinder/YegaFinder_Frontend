@@ -2,19 +2,18 @@
 
 import { useState } from "react";
 import type { Business } from "@/types/business.types";
-import { ReviewsList } from "@/features/reviews/components/ReviewsList";
-import { ReviewForm } from "@/features/reviews/components/ReviewForm";
-import { useReviews } from "@/features/reviews/api/hooks/useReviews";
-import { useSubmitReview } from "@/features/reviews/api/hooks/useSubmitReview";
+import { ReviewForm } from "../../reviews/components/ReviewForm";
+import { ReviewsList } from "../../reviews/components/ReviewsList";
+import { useReviews } from "../../reviews/api/hooks/useReviews";
+import { useSubmitReview } from "../../reviews/api/hooks/useSubmitReview";
 
-const TABS = ["Overview", "Services", "Photos", "Reviews", "Contact"] as const;
+const TABS = ["Overview", "Services", "Photos", "Contact", "Reviews"] as const;
 type Tab = (typeof TABS)[number];
 
 export function BusinessDetailTabs({ business }: { business: Business }) {
   const [tab, setTab] = useState<Tab>("Overview");
-
   const { data: reviews, isLoading: reviewsLoading } = useReviews(business.id);
-  const submitReview = useSubmitReview(business.id);
+  const { mutate: submitReview, isPending: isSubmitting } = useSubmitReview(business.id);
 
   return (
     <div>
@@ -63,19 +62,6 @@ export function BusinessDetailTabs({ business }: { business: Business }) {
             <p className="text-muted-foreground">No photos uploaded yet.</p>
           )
         )}
-        {tab === "Reviews" && (
-          <div className="space-y-6">
-            <ReviewForm
-              onSubmit={(review) => submitReview.mutate(review)}
-              isSubmitting={submitReview.isPending}
-            />
-            {reviewsLoading ? (
-              <p className="text-muted-foreground text-sm">Loading reviews...</p>
-            ) : (
-              <ReviewsList reviews={reviews ?? []} />
-            )}
-          </div>
-        )}
         {tab === "Contact" && (
           <ul className="space-y-2 text-sm">
             {business.contactPhone && <li>Phone: {business.contactPhone}</li>}
@@ -83,6 +69,16 @@ export function BusinessDetailTabs({ business }: { business: Business }) {
             {business.websiteUrl && <li>Website: {business.websiteUrl}</li>}
             {business.businessAddress && <li>Address: {business.businessAddress}</li>}
           </ul>
+        )}
+        {tab === "Reviews" && (
+          <div className="space-y-6">
+            {reviewsLoading ? (
+              <p className="text-muted-foreground text-sm">Loading reviews...</p>
+            ) : (
+              <ReviewsList reviews={reviews ?? []} />
+            )}
+            <ReviewForm onSubmit={submitReview} isSubmitting={isSubmitting} />
+          </div>
         )}
       </div>
     </div>
