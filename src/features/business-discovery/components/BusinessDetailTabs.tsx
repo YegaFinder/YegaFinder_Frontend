@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import type { Business } from "@/types/business.types";
+import { ReviewForm } from "../../reviews/components/ReviewForm";
+import { ReviewsList } from "../../reviews/components/ReviewsList";
+import { useReviews } from "../../reviews/api/hooks/useReviews";
+import { useSubmitReview } from "../../reviews/api/hooks/useSubmitReview";
+import { MessageBusinessButton } from "@/features/messaging/components/MessageBusinessButton";
 
-const TABS = ["Overview", "Services", "Photos", "Contact"] as const;
+const TABS = ["Overview", "Services", "Photos", "Contact", "Reviews"] as const;
 type Tab = (typeof TABS)[number];
 
 export function BusinessDetailTabs({ business }: { business: Business }) {
   const [tab, setTab] = useState<Tab>("Overview");
+  const { data: reviews, isLoading: reviewsLoading } = useReviews(business.id);
+  const { mutate: submitReview, isPending: isSubmitting } = useSubmitReview(business.id);
 
   return (
     <div>
@@ -57,12 +64,28 @@ export function BusinessDetailTabs({ business }: { business: Business }) {
           )
         )}
         {tab === "Contact" && (
-          <ul className="space-y-2 text-sm">
-            {business.contactPhone && <li>Phone: {business.contactPhone}</li>}
-            {business.contactEmail && <li>Email: {business.contactEmail}</li>}
-            {business.websiteUrl && <li>Website: {business.websiteUrl}</li>}
-            {business.businessAddress && <li>Address: {business.businessAddress}</li>}
-          </ul>
+          <div className="space-y-4">
+            <ul className="space-y-2 text-sm">
+              {business.contactPhone && <li>Phone: {business.contactPhone}</li>}
+              {business.contactEmail && <li>Email: {business.contactEmail}</li>}
+              {business.websiteUrl && <li>Website: {business.websiteUrl}</li>}
+              {business.businessAddress && <li>Address: {business.businessAddress}</li>}
+            </ul>
+            <MessageBusinessButton
+              businessId={business.id}
+              businessName={business.businessName}
+            />
+          </div>
+        )}
+        {tab === "Reviews" && (
+          <div className="space-y-6">
+            {reviewsLoading ? (
+              <p className="text-muted-foreground text-sm">Loading reviews...</p>
+            ) : (
+              <ReviewsList reviews={reviews ?? []} />
+            )}
+            <ReviewForm onSubmit={submitReview} isSubmitting={isSubmitting} />
+          </div>
         )}
       </div>
     </div>

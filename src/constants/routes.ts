@@ -1,4 +1,4 @@
-export const ROUTES = {
+﻿export const ROUTES = {
   HOME: "/",
   APP_HOME:"/home",
   LOGIN: "/login",
@@ -13,6 +13,7 @@ export const ROUTES = {
   PROFILE: "/profile",
   SAVED_PLACES: "/saved-places",
   FAVORITES: "/favorites",
+  BOOKINGS: "/bookings",
 
   BUSINESSES: "/businesses",
   BUSINESS_DETAIL: (id: string) => `/businesses/${id}`,
