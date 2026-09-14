@@ -68,7 +68,7 @@ export default function AppHomePage() {
         <h1 className="text-2xl font-semibold">
           {user?.firstName ? `Welcome back, ${user.firstName}` : "Discover businesses near you"}
         </h1>
-        <p className="text-muted-foreground">Browse by category, or see what's nearby.</p>
+        <p className="text-muted-foreground">Browse by category, or see what&apos;s nearby.</p>
       </div>
 
       {!categoriesLoading && categories && categories.length > 0 && (
