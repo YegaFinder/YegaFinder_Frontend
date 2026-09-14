@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { businessDiscoveryApi } from "../business-discovery.api";
-import type { GetBusinessesParams } from "../business-discovery.api";
+import { businessDiscoveryApi, type GetBusinessesParams } from "../business-discovery.api";
 
 export function useBusinesses(params: GetBusinessesParams) {
   return useQuery({

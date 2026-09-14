@@ -1,31 +1,37 @@
 ﻿import { apiClient } from "@/lib/api-client";
-import type { BusinessListItem, BusinessDetail } from "@/types/business.types";
+import type { PaginatedEnvelope, ApiEnvelope } from "@/lib/api-response";
+import type { Business, NearbyBusiness } from "@/types/business.types";
 
-export interface GetBusinessesParams {
-  category?: string; // unconfirmed: is this a category id or name? ask backend
-  page?: number;
-  limit?: number;
-}
-
-// Matches the doc's actual example payloads, not the app's existing
-// ApiResponse/PaginatedResponse types — those disagree on meta field names
-// and whether "success" is present. Confirm with backend before Sprint 4.
-interface BusinessListResponse {
-  data: BusinessListItem[];
-  meta: { total: number; page: number; limit: number };
-}
-interface BusinessDetailResponse {
-  data: BusinessDetail;
+export interface GetBusinessesParams { page?: number; limit?: number; }
+export interface SearchBusinessesParams extends GetBusinessesParams { q: string; }
+export interface NearbyBusinessesParams extends GetBusinessesParams {
+  lat: number; lng: number; radius?: number;
 }
 
 export const businessDiscoveryApi = {
+  // §4.1 — Pattern B
   getBusinesses: async (params: GetBusinessesParams) => {
-    const { data } = await apiClient.get<BusinessListResponse>("/businesses", { params });
-    return data;
+    const { data } = await apiClient.get<PaginatedEnvelope<Business>>("/businesses", { params });
+    return data.data; // { items, total, page, limit, totalPages }
   },
 
-  getBusinessById: async (id: string) => {
-    const { data } = await apiClient.get<BusinessDetailResponse>(`/businesses/${id}`);
-    return data;
+  // §4.2 — Pattern B, same shape as getBusinesses
+  searchBusinesses: async (params: SearchBusinessesParams) => {
+    const { data } = await apiClient.get<PaginatedEnvelope<Business>>("/businesses/search", { params });
+    return data.data;
+  },
+
+  // §4.3 — Pattern B, items include distanceKm
+  getNearbyBusinesses: async (params: NearbyBusinessesParams) => {
+    const { data } = await apiClient.get<PaginatedEnvelope<NearbyBusiness>>("/businesses/nearby", {
+      params: { radius: 10, ...params },
+    });
+    return data.data;
+  },
+
+  // §4.4 — Pattern A
+  getBusinessById: async (id: string): Promise<Business> => {
+    const { data } = await apiClient.get<ApiEnvelope<Business>>(`/businesses/${id}`);
+    return data.data;
   },
 };

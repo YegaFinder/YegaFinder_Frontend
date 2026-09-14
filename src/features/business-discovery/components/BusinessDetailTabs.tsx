@@ -1,12 +1,12 @@
 ﻿"use client";
 
 import { useState } from "react";
-import type { Listing } from "../types/listing.types";
+import type { Business } from "@/types/business.types";
 
 const TABS = ["Overview", "Services", "Contact"] as const;
 type Tab = (typeof TABS)[number];
 
-export function BusinessDetailTabs({ listing }: { listing: Listing }) {
+export function BusinessDetailTabs({ business }: { business: Business }) {
   const [tab, setTab] = useState<Tab>("Overview");
 
   return (
@@ -24,11 +24,11 @@ export function BusinessDetailTabs({ listing }: { listing: Listing }) {
       </div>
 
       <div className="py-4">
-        {tab === "Overview" && <p>{listing.description || "No description provided."}</p>}
+        {tab === "Overview" && <p>{business.description || "No description provided."}</p>}
         {tab === "Services" && (
           <ul className="space-y-2">
-            {listing.servicesOffered?.length ? (
-              listing.servicesOffered.map((s) => (
+            {business.servicesOffered?.length ? (
+              business.servicesOffered.map((s) => (
                 <li key={s.id} className="flex justify-between border-b pb-2">
                   <span>{s.name}</span>
                   {s.price != null && <span>{s.price} {s.currency ?? "ETB"}</span>}
@@ -41,10 +41,10 @@ export function BusinessDetailTabs({ listing }: { listing: Listing }) {
         )}
         {tab === "Contact" && (
           <ul className="space-y-2 text-sm">
-            {listing.contactPhone && <li>Phone: {listing.contactPhone}</li>}
-            {listing.contactEmail && <li>Email: {listing.contactEmail}</li>}
-            {listing.websiteUrl && <li>Website: {listing.websiteUrl}</li>}
-            {listing.businessAddress && <li>Address: {listing.businessAddress}</li>}
+            {business.contactPhone && <li>Phone: {business.contactPhone}</li>}
+            {business.contactEmail && <li>Email: {business.contactEmail}</li>}
+            {business.websiteUrl && <li>Website: {business.websiteUrl}</li>}
+            {business.businessAddress && <li>Address: {business.businessAddress}</li>}
           </ul>
         )}
       </div>

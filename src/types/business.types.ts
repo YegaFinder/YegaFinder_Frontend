@@ -1,44 +1,13 @@
-﻿export interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-  // FIXED: backend actually sends "Customer" | "Merchant" | "Moderator" | "Admin"
-  // (see UserRole enum, users/enums/user-role.enum.ts). This previously used
-  // ALL-CAPS values that never match a real API response — any `role === "MERCHANT"`
-  // check against data from this type was silently always false.
-  role: "Customer" | "Merchant" | "Moderator" | "Admin";
-  isVerified: boolean;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  isActive: boolean;
-  createdAt: string;
-}
+﻿import type { User } from "@/features/auth/types/auth.types";
 
 export interface BusinessCategory {
   id: string;
   name: string;
   description: string | null;
   subCategories?: BusinessCategory[];
-  parentCategory?: BusinessCategory | null;
 }
 
-export type Category = BusinessCategory;
-
-export interface BusinessHoursItem {
-  dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
-  openTime: string | null;
-  closeTime: string | null;
-  isClosed: boolean;
-  is24Hours: boolean;
-  breakStartTime: string | null;
-  breakEndTime: string | null;
-}
-
-// FIXED: backend's servicesOffered is an array of objects (Business entity,
-// services_offered jsonb column), never plain strings.
-export interface BusinessService {
+export interface ServiceOffered {
   id: string;
   name: string;
   description?: string;
@@ -46,72 +15,142 @@ export interface BusinessService {
   currency?: string;
 }
 
-export interface Listing {
+export interface BusinessHours {
+  dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+  openTime: string | null;  // "HH:mm"
+  closeTime: string | null; // "HH:mm"
+  isClosed: boolean;
+  is24Hours: boolean;
+  breakStartTime: string | null;
+  breakEndTime: string | null;
+}
+
+export interface GalleryItem {
+  id: string;
+  businessId: string;
+  mediaUrl: string;
+  mediaType: string;
+  caption?: string;
+  isFeatured: boolean;
+  createdAt: string;
+}
+
+export interface Promotion {
+  id: string;
+  title: string;
+  description?: string;
+  discountPercentage?: number;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+}
+
+export interface Business {
   id: string;
   businessName: string;
-  description: string | null;
-  logoUrl: string | null;
-  bannerUrl: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  businessAddress: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  websiteUrl: string | null;
-  socialMedia: Record<string, string>;
-  // NOTE: always [] in practice right now — the backend accepts
-  // businessCategories on create/update but never persists them
-  // (confirmed in profiles.service.ts). Not a frontend bug, don't
-  // "fix" this by changing the shape — the shape is correct, the
-  // backend just never fills it in yet.
-  businessCategories: BusinessCategory[];
-  servicesOffered: BusinessService[]; // FIXED: was string[]
-  businessHours: BusinessHoursItem[];
+  description?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  businessAddress?: string;
+  latitude?: number;
+  longitude?: number;
+  websiteUrl?: string;
+  taxId?: string;
   averageRating: number;
   totalReviews: number;
+  verificationStatus: "pending" | "verified" | "rejected";
+  listingStatus: "PENDING" | "APPROVED" | "REJECTED"; // UPPERCASE
+  isPublic: boolean;
   isFeatured: boolean;
   isProfileComplete: boolean;
-  isPublic: boolean;
-  // FIXED: lowercase — matches Business entity's verificationStatus column exactly.
-  verificationStatus: "pending" | "verified" | "rejected";
-  // FIXED: dropped "DRAFT" — the backend's ListingStatus enum only has
-  // these three values, a listing is never in a "draft" state server-side.
-  listingStatus: "PENDING" | "APPROVED" | "REJECTED";
-  listingSubmittedAt: string | null;
-  listingReviewedAt: string | null;
-  listingRejectionReason: string | null;
-  user: User;
+  listingSubmittedAt?: string;
+  listingReviewedAt?: string;
+  listingRejectionReason?: string;
+  user?: User;
+  businessCategories?: BusinessCategory[];
+  servicesOffered?: ServiceOffered[];
+  businessHours?: BusinessHours[];
+  galleries?: GalleryItem[];
+  promotions?: Promotion[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface NearbyListing extends Listing {
+export interface NearbyBusiness extends Business {
   distanceKm: number;
 }
 
-// This matches /listings, /listings/search, /listings/nearby exactly:
-// { listings: [...], meta: { total, page, limit } } — no `success` wrapper
-// at this level (it's one level up, wrapping this whole object).
-export interface PaginatedListingsResponse<T = Listing> {
-  listings: T[];
-  meta: { total: number; page: number; limit: number };
+// Bookings
+export type BookingStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
+
+export interface Booking {
+  id: string;
+  customerId: string;
+  businessId: string;
+  status: BookingStatus;
+  appointmentTime: string;
+  notes?: string;
+  customer?: Pick<User, "id" | "firstName" | "lastName" | "email" | "phone">;
+  business?: Pick<Business, "id" | "businessName" | "logoUrl">;
+  createdAt: string;
+  updatedAt: string;
 }
 
+// Reviews
 export interface Review {
   id: string;
   userId: string;
   businessId: string;
   rating: number;
-  comment: string | null;
-  verifiedBookingId: string | null;
-  // Present on GET /businesses/:businessId/reviews (the User relation is
-  // `eager: true` on BusinessReview, so TypeORM includes it automatically
-  // on every find()). NOT reliably present on the response to POST (the
-  // create endpoint returns the just-saved row without reloading relations) —
-  // don't assume `user` exists right after submitting a review, only after
-  // refetching the list.
-  user: User;
+  comment?: string;
+  verifiedBookingId?: string;
+  user?: Pick<User, "id" | "firstName" | "lastName" | "email">;
   createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
+}
+
+export interface NewReview {
+  rating: number;
+  comment: string;
+  verifiedBookingId?: string;
+}
+
+// Chat / Messages
+export type SenderRole = "CUSTOMER" | "MERCHANT";
+
+export interface Message {
+  id: string;
+  businessId: string;
+  senderId: string;
+  senderRole: SenderRole;
+  text: string;
+  createdAt: string;
+}
+
+export interface MerchantThread {
+  customerId: string;
+  customerName: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+}
+
+// Payments
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+
+export interface Payment {
+  status: PaymentStatus;
+  amount: number;
+  currency: string;
+  txRef: string;
+  createdAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

@@ -4,12 +4,6 @@ import { useAuthStore } from "@/store/auth-store";
 import { env } from "./env";
 
 const getBaseUrl = () => {
-  // env.NEXT_PUBLIC_API_URL is always set here — env.ts validates it at
-  // startup (defaulting to http://localhost:8000/api/v1 in dev/test, or
-  // throwing a clear error at import time in production if it's missing).
-  // There is no legitimate case where it's empty by the time this runs,
-  // so there's no safe host to guess as a fallback — see .env.example /
-  // deployment config if the wrong URL is being used.
   let url = env.NEXT_PUBLIC_API_URL;
   if (!url.endsWith("/api/v1")) {
     url = url.replace(/\/$/, "") + "/api/v1";
@@ -19,12 +13,9 @@ const getBaseUrl = () => {
 
 export const apiClient = axios.create({
   baseURL: getBaseUrl(),
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-/* ---- Request interceptor: attach the access token to every call ---- */
 apiClient.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
@@ -36,7 +27,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ---- Refresh token ---- 
 let refreshPromise: Promise<string> | null = null;
 
 async function refreshAccessToken(): Promise<string> {
@@ -46,13 +36,9 @@ async function refreshAccessToken(): Promise<string> {
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error("No refresh token available");
 
+    // POST /auth/refresh — Pattern A, data: { accessToken, refreshToken }
     const { data } = await axios.post(`${apiClient.defaults.baseURL}/auth/refresh`, { refreshToken });
-    // AuthResponseDto is nested under the standard envelope — NOT flat.
     const auth = data.data as { accessToken: string; refreshToken: string };
-    // Token rotation (BACKEND_INTEGRATION_GUIDE.md §2): the OLD refresh
-    // token is revoked the instant this call succeeds. Both must be
-    // overwritten, or the next refresh attempt reuses a dead token and
-    // gets a hard 401 with no recovery path.
     setTokens(auth.accessToken, auth.refreshToken);
     return auth.accessToken;
   })();
@@ -64,13 +50,8 @@ async function refreshAccessToken(): Promise<string> {
   }
 }
 
-/* ---- Response interceptor: silently refresh on a 401, retry once ---- */
-// Endpoints where a 401 means "bad credentials / bad OTP / no valid
-// refresh token to begin with" — NOT "access token expired." Hitting
-// the refresh-and-retry flow here is always wrong: there's no session
-// to refresh yet, so it immediately fails, wipes storage, and hard-
-// redirects to /login — which is exactly what happens if this list is
-// missing and someone just types the wrong password.
+// Endpoints where a 401 means "bad credentials/OTP", not "expired session" —
+// never trigger the refresh-and-retry flow for these.
 const AUTH_ENDPOINTS_EXCLUDED_FROM_REFRESH = [
   "/auth/login",
   "/auth/register",
@@ -98,13 +79,6 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
-      // A guest with no refresh token was never logged in — there is no
-      // session to expire, so this 401 is just "this endpoint requires
-      // auth" (e.g. the categories/businesses endpoints that are missing
-      // @Public() server-side, per the backend reference doc). Reject
-      // as-is and let the caller decide how to degrade (e.g. a
-      // logged-out fallback), instead of wiping storage and hard-
-      // redirecting a guest off whatever public page they were on.
       if (!getRefreshToken()) {
         return Promise.reject(error);
       }
@@ -129,14 +103,9 @@ apiClient.interceptors.response.use(
         error.response.data = error.response.data || {};
         error.response.data.message = `Too many attempts. Please try again in ${retryAfter} seconds.`;
       }
-
       return Promise.reject(error);
     }
 
-    // Anything not specifically handled above (404, 500, network errors, etc.)
-    // must still be rejected, or axios treats the interceptor's implicit
-    // `undefined` return as a *successful* response and callers blow up
-    // trying to destructure `.data` off of it.
     return Promise.reject(error);
   },
 );
