@@ -17,6 +17,9 @@
 
   BUSINESSES: "/businesses",
   BUSINESS_DETAIL: (id: string) => `/businesses/${id}`,
+  SEARCH: "/search",
+  NEARBY: "/nearby",
+  CHECKOUT: "/checkout",
 
   MERCHANT_DASHBOARD: "/dashboard",
   MERCHANT_PROFILE: "/dashboard/profile",

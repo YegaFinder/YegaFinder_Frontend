@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Bookmark, User, LayoutDashboard, CalendarCheck, MessageCircle } from "lucide-react";
+import { Home, Search, MapPin, Bookmark, User, LayoutDashboard, CalendarCheck, MessageCircle } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,8 @@ type NavItem = {
 
 const CUSTOMER_ITEMS: NavItem[] = [
   { href: ROUTES.APP_HOME, label: "Home", icon: Home },
+  { href: ROUTES.SEARCH, label: "Search", icon: Search },
+  { href: ROUTES.NEARBY, label: "Nearby", icon: MapPin },
   { href: ROUTES.SAVED_PLACES, label: "Saved", icon: Bookmark },
   { href: ROUTES.PROFILE, label: "Profile", icon: User },
 ];

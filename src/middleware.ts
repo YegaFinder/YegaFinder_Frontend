@@ -19,8 +19,7 @@ const GUEST_ONLY_ROUTES: string[] = [
 
 // Reachable by guests AND logged-in users — unlike GUEST_ONLY_ROUTES,
 // logged-in users are NOT redirected away from these.
-// TODO: move to ROUTES constant once /businesses has one there.
-const PUBLIC_ROUTE_PREFIXES: string[] = ["/businesses"];
+const PUBLIC_ROUTE_PREFIXES: string[] = [ROUTES.BUSINESSES, ROUTES.SEARCH, ROUTES.NEARBY];
 const isPublicRoute = (pathname: string) =>
   PUBLIC_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
@@ -50,7 +49,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith(ROUTES.PROFILE) ||
       pathname.startsWith(ROUTES.SAVED_PLACES) ||
       pathname.startsWith(ROUTES.FAVORITES) ||
-      pathname.startsWith(ROUTES.BOOKINGS);
+      pathname.startsWith(ROUTES.BOOKINGS) ||
+      pathname.startsWith(ROUTES.CHECKOUT);
     const isMerchantRoute = pathname.startsWith(ROUTES.MERCHANT_DASHBOARD);
 
     if (isCustomerRoute && role === "Merchant") {
@@ -76,8 +76,12 @@ export const config = {
     "/saved-places/:path*",
     "/favorites/:path*",
     "/bookings/:path*",
-      "/businesses",
-      "/businesses/:path*",
+    "/businesses",
+    "/businesses/:path*",
+    "/search",
+    "/nearby",
+    "/checkout",
+    "/checkout/:path*",
     "/login",
     "/register",
     "/forgot-password",

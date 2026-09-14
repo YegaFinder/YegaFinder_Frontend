@@ -36,6 +36,8 @@ export function AppHeader({ role }: { role: "Customer" | "Merchant" }) {
             {role === "Customer" ? (
               <>
                 <Link href={ROUTES.APP_HOME} className="text-sm font-medium hover:text-yegna-primary">Home</Link>
+                <Link href={ROUTES.SEARCH} className="text-sm font-medium hover:text-yegna-primary">Search</Link>
+                <Link href={ROUTES.NEARBY} className="text-sm font-medium hover:text-yegna-primary">Nearby</Link>
                 <Link href={ROUTES.PROFILE} className="text-sm font-medium hover:text-yegna-primary">Profile</Link>
                 <Link href={ROUTES.SAVED_PLACES} className="text-sm font-medium hover:text-yegna-primary">Saved Places</Link>
               </>

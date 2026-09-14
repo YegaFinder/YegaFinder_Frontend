@@ -11,7 +11,6 @@ export interface GetBusinessesParams {
   lng?: number;
   radius?: number;
 }
-export interface SearchBusinessesParams extends GetBusinessesParams { q: string; }
 export interface NearbyBusinessesParams {
   lat: number;
   lng: number;
@@ -37,21 +36,23 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 export const businessDiscoveryApi = {
   // §4.1 — Pattern B. Backing route: GET /businesses (DiscoveryController.findAll)
   // — the only non-shadowed, filterable, correctly-paginated discovery endpoint.
-  // Supports q + categoryId + lat/lng/radius together.
+  // Supports q + categoryId + lat/lng/radius together. This is also the
+  // endpoint used for keyword search (pass `q`) — see the removed
+  // searchBusinesses note below for why /businesses/search itself is avoided.
   getBusinesses: async (params: GetBusinessesParams) => {
     const { data } = await apiClient.get<PaginatedEnvelope<Business>>("/businesses", { params });
     return data.data; // { items, total, page, limit, totalPages }
   },
 
-  // §4.2 — DO NOT USE for new features. Backing route GET /businesses/search is
-  // shadowed by BusinessDiscoveryController (registered first in profiles.module.ts)
-  // and returns { businesses: [] } with no pagination — mismatched against this
-  // function's PaginatedEnvelope assumption. Kept only so nothing else importing
-  // it breaks; not wired into SearchFeed anymore. Use getBusinesses({ q }) instead.
-  searchBusinesses: async (params: SearchBusinessesParams) => {
-    const { data } = await apiClient.get<PaginatedEnvelope<Business>>("/businesses/search", { params });
-    return data.data;
-  },
+  // REMOVED: searchBusinesses (GET /businesses/search). That route is
+  // shadowed by BusinessDiscoveryController (registered before
+  // DiscoveryController in profiles.module.ts) and returns { businesses: [] }
+  // with no pagination — a different, incompatible shape from
+  // PaginatedEnvelope. Nothing in the app used it (confirmed via full-repo
+  // grep before removal). Use getBusinesses({ q }) for search — that's what
+  // SearchFeed already does. If the backend team ever fixes the route
+  // shadowing, re-add a real searchBusinesses here against the corrected
+  // contract rather than resurrecting this one.
 
   // §4.3 — Backing route GET /businesses/nearby is shadowed by
   // BusinessDiscoveryController (registered before DiscoveryController in
