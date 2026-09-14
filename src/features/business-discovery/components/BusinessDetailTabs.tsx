@@ -6,6 +6,7 @@ import { ReviewForm } from "../../reviews/components/ReviewForm";
 import { ReviewsList } from "../../reviews/components/ReviewsList";
 import { useReviews } from "../../reviews/api/hooks/useReviews";
 import { useSubmitReview } from "../../reviews/api/hooks/useSubmitReview";
+import { MessageBusinessButton } from "@/features/messaging/components/MessageBusinessButton";
 
 const TABS = ["Overview", "Services", "Photos", "Contact", "Reviews"] as const;
 type Tab = (typeof TABS)[number];
@@ -63,12 +64,18 @@ export function BusinessDetailTabs({ business }: { business: Business }) {
           )
         )}
         {tab === "Contact" && (
-          <ul className="space-y-2 text-sm">
-            {business.contactPhone && <li>Phone: {business.contactPhone}</li>}
-            {business.contactEmail && <li>Email: {business.contactEmail}</li>}
-            {business.websiteUrl && <li>Website: {business.websiteUrl}</li>}
-            {business.businessAddress && <li>Address: {business.businessAddress}</li>}
-          </ul>
+          <div className="space-y-4">
+            <ul className="space-y-2 text-sm">
+              {business.contactPhone && <li>Phone: {business.contactPhone}</li>}
+              {business.contactEmail && <li>Email: {business.contactEmail}</li>}
+              {business.websiteUrl && <li>Website: {business.websiteUrl}</li>}
+              {business.businessAddress && <li>Address: {business.businessAddress}</li>}
+            </ul>
+            <MessageBusinessButton
+              businessId={business.id}
+              businessName={business.businessName}
+            />
+          </div>
         )}
         {tab === "Reviews" && (
           <div className="space-y-6">
