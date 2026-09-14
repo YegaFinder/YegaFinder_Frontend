@@ -1,4 +1,5 @@
 ﻿export type { Booking, BookingStatus } from "@/types/business.types";
+export type { ServiceOffered as ListingService } from "@/types/business.types";
 
 export interface CreateBookingRequest {
   businessId: string;
