@@ -11,7 +11,9 @@ export function ReviewsList({ reviews }: { reviews: Review[] }) {
       {reviews.map((review) => (
         <li key={review.id} className="border-b pb-3">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-sm">{review.authorName}</span>
+            <span className="font-medium text-sm">
+              {review.user ? `${review.user.firstName} ${review.user.lastName}` : "Anonymous"}
+            </span>
             <StarRating value={review.rating} readOnly />
           </div>
           <p className="text-sm text-muted-foreground mt-1">{review.comment}</p>
