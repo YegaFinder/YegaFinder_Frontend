@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { bookingApi } from "../booking.api";
 import { getErrorMessage } from "@/lib/errors";
-import type { CreateBookingRequest } from "../types/booking.types";
+import type { CreateBookingRequest } from "../../types/booking.types";
 
 export function useCreateBooking() {
   const queryClient = useQueryClient();

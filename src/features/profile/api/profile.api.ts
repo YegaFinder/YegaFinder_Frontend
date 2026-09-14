@@ -31,12 +31,11 @@ export const profileApi = {
    * ProfileAvatar.tsx uses the real presigned-upload flow instead and
    * does not call this method — kept only for shape parity.
    */
-  uploadAvatar: async (file: File): Promise<CustomerProfile> => {
-    const form = new FormData();
-    form.append("file", file);
-    const { data } = await apiClient.post<ApiEnvelope<CustomerProfile>>("/profile/avatar", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return data.data;
-  },
+  // §9.3 — Pattern A, direct multipart to /profile/avatar (no separate presigned flow per the docs)
+uploadAvatar: async (file: File): Promise<{ avatarUrl: string }> => {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await apiClient.post<ApiEnvelope<{ avatarUrl: string }>>("/profile/avatar", form);
+  return data.data;
+},
 };
