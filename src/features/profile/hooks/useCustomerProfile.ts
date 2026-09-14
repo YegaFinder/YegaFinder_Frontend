@@ -13,7 +13,6 @@ import type {
   UpdateCustomerProfileRequest,
 } from "../types/profile.types";
 
-/** Shared query key — every read AND every mutation's invalidation must use this exact tuple. */
 export const CUSTOMER_PROFILE_QUERY_KEY = ["profile", "customer"] as const;
 
 export function useCustomerProfile() {
@@ -22,8 +21,6 @@ export function useCustomerProfile() {
   const query = useQuery({
     queryKey: CUSTOMER_PROFILE_QUERY_KEY,
     queryFn: profileApi.getProfile,
-    // A brand-new customer legitimately has no profile yet (404) — don't
-    // burn retries treating that as a transient failure.
     retry: (failureCount, error) => {
       if (axios.isAxiosError(error) && error.response?.status === 404) return false;
       return failureCount < 1;
@@ -44,12 +41,6 @@ export function useCustomerProfile() {
       toast.success("Profile created.");
     },
     onError: async (error) => {
-      // The backend has been observed to commit the create and still
-      // respond with an error (a stray 500 right after the insert, or a
-      // genuine 409 because an earlier attempt already went through).
-      // Rather than trust the error response blindly, check whether a
-      // profile exists now — if it does, this is actually a success, so
-      // the user shouldn't have to reload or hit "Create" twice.
       try {
         const existingProfile = await profileApi.getProfile();
         queryClient.setQueryData(CUSTOMER_PROFILE_QUERY_KEY, existingProfile);
@@ -84,18 +75,11 @@ export function useCustomerProfile() {
     createProfile: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
 
-    // Kept as `updateProfile` / `isSaving` for drop-in compatibility with
-    // existing callers (CustomerProfileForm, ProfileAvatar, notifications).
     updateProfile: updateMutation.mutateAsync,
     isSaving: updateMutation.isPending,
   };
 }
 
-/**
- * Submits profile edits (dateOfBirth/bio/preferredLanguage). Name and
- * phone live on `User` and have no confirmed edit endpoint yet, so
- * there's nothing to sync back into the auth store from this call.
- */
 export function useUpdateProfile(onSuccess?: (profile: CustomerProfile) => void) {
   const { updateProfile, isSaving } = useCustomerProfile();
   const [error, setError] = useState<string | null>(null);
@@ -117,36 +101,47 @@ export function useUpdateProfile(onSuccess?: (profile: CustomerProfile) => void)
 }
 
 /**
- * Updates the avatar via the same PUT /profiles/customer used for the
- * rest of the profile — there's no separate avatar endpoint in the
- * confirmed contract, and the two-step S3 upload flow requires manually
- * PUTting the resulting `fileUrl` into this field yourself (§6.21).
+ * Uploads the avatar via POST /profile/avatar (guide §9.3). Sprint 3's
+ * backend carry-over fix ("finish real S3 uploads for
+ * avatar/logo/banner/gallery") retired the old fake-URL stub, so this
+ * now goes straight to the documented endpoint — the same pattern
+ * already used for logo/banner (see merchantProfileApi.uploadLogo /
+ * uploadBanner) — instead of the undocumented /uploads/presign
+ * workaround. That endpoint returns only `{ avatarUrl }`, not a full
+ * profile, so we merge it into the cached profile ourselves rather than
+ * relying on the response to replace the whole object.
  */
 export function useUpdateAvatar(onSuccess: (profile: CustomerProfile) => void) {
-  const { updateProfile, isSaving } = useCustomerProfile();
+  const queryClient = useQueryClient();
+  const [isSaving, setIsSaving] = useState(false);
 
-  async function updateAvatar(avatarUrl: string) {
+  async function updateAvatar(file: File) {
+    setIsSaving(true);
     try {
-      const updated = await updateProfile({ avatarUrl });
+      const { avatarUrl } = await profileApi.uploadAvatar(file);
+
+      const previous = queryClient.getQueryData<CustomerProfile>(CUSTOMER_PROFILE_QUERY_KEY);
+      const updated: CustomerProfile = previous
+        ? { ...previous, avatarUrl }
+        : ({ avatarUrl } as CustomerProfile);
+
+      queryClient.setQueryData(CUSTOMER_PROFILE_QUERY_KEY, updated);
+      await queryClient.invalidateQueries({ queryKey: CUSTOMER_PROFILE_QUERY_KEY });
+
       toast.success("Profile photo updated.");
       onSuccess(updated);
       return updated;
     } catch (err) {
       toast.error(getErrorMessage(err));
       return null;
+    } finally {
+      setIsSaving(false);
     }
   }
 
   return { updateAvatar, isSaving };
 }
 
-/**
- * There is no separate notifications endpoint — `notificationPreferences`
- * is a top-level field on the same profile resource, replaced wholesale
- * on every PUT. The caller (NotificationPreferences.tsx) already builds
- * the full `{ ...preferences, [key]: checked }` object before calling
- * this, so a plain pass-through PUT is correct.
- */
 export function useUpdateNotificationPreferences(onSuccess?: (profile: CustomerProfile) => void) {
   const { updateProfile, isSaving } = useCustomerProfile();
 
