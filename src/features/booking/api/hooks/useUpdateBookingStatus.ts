@@ -1,18 +1,30 @@
+﻿"use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { bookingApi } from "../booking.api";
-import { getErrorMessage } from "@/lib/errors";
-import type { UpdateBookingStatusRequest } from "../../types/booking.types";
 
 export function useUpdateBookingStatus() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ bookingId, payload }: { bookingId: string; payload: UpdateBookingStatusRequest }) =>
-      bookingApi.updateBookingStatus(bookingId, payload),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["bookings", "merchant"] });
-      toast.success(variables.payload.status === "ACCEPTED" ? "Booking accepted." : "Booking rejected.");
-    },
-    onError: (error) => toast.error(getErrorMessage(error)),
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["bookings", "merchant"] });
+
+  const accept = useMutation({
+    mutationFn: (bookingId: string) =>
+      bookingApi.updateBookingStatus(bookingId, { status: "ACCEPTED" }),
+    onSuccess: invalidate,
   });
+
+  const reject = useMutation({
+    mutationFn: (bookingId: string) =>
+      bookingApi.updateBookingStatus(bookingId, { status: "REJECTED" }),
+    onSuccess: invalidate,
+  });
+
+  return {
+    accept: accept.mutate,
+    isAccepting: accept.isPending,
+    reject: reject.mutate,
+    isRejecting: reject.isPending,
+  };
 }

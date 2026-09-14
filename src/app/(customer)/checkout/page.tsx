@@ -1,8 +1,10 @@
 ﻿"use client";
 
+import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useInitiatePayment } from "@/features/payments/api/hooks/useInitiatePayment";
 import { useVerifyPayment } from "@/features/payments/api/hooks/useVerifyPayment";
+import { ROUTES } from "@/constants/routes";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -13,9 +15,11 @@ export default function CheckoutPage() {
   const { mutate: initiate, isPending } = useInitiatePayment();
   const { data: payment } = useVerifyPayment(txRef, { pollWhilePending: true });
 
-  if (payment?.status === "PAID" && bookingId) {
-    router.push(`/bookings/${bookingId}`);
-  }
+  useEffect(() => {
+    if (payment?.status === "PAID" && bookingId) {
+      router.push(ROUTES.BOOKINGS);
+    }
+  }, [payment?.status, bookingId, router]);
 
   return (
     <main className="container mx-auto px-4 py-6 max-w-md space-y-6">

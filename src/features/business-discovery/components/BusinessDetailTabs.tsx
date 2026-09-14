@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import type { Business } from "@/types/business.types";
+import { ReviewsList } from "@/features/reviews/components/ReviewsList";
+import { ReviewForm } from "@/features/reviews/components/ReviewForm";
+import { useReviews } from "@/features/reviews/api/hooks/useReviews";
+import { useSubmitReview } from "@/features/reviews/api/hooks/useSubmitReview";
 
-const TABS = ["Overview", "Services", "Photos", "Contact"] as const;
+const TABS = ["Overview", "Services", "Photos", "Reviews", "Contact"] as const;
 type Tab = (typeof TABS)[number];
 
 export function BusinessDetailTabs({ business }: { business: Business }) {
   const [tab, setTab] = useState<Tab>("Overview");
+
+  const { data: reviews, isLoading: reviewsLoading } = useReviews(business.id);
+  const submitReview = useSubmitReview(business.id);
 
   return (
     <div>
@@ -55,6 +62,19 @@ export function BusinessDetailTabs({ business }: { business: Business }) {
           ) : (
             <p className="text-muted-foreground">No photos uploaded yet.</p>
           )
+        )}
+        {tab === "Reviews" && (
+          <div className="space-y-6">
+            <ReviewForm
+              onSubmit={(review) => submitReview.mutate(review)}
+              isSubmitting={submitReview.isPending}
+            />
+            {reviewsLoading ? (
+              <p className="text-muted-foreground text-sm">Loading reviews...</p>
+            ) : (
+              <ReviewsList reviews={reviews ?? []} />
+            )}
+          </div>
         )}
         {tab === "Contact" && (
           <ul className="space-y-2 text-sm">
