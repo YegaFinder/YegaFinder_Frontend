@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Business } from "@/types/business.types";
 
-const TABS = ["Overview", "Services", "Contact"] as const;
+const TABS = ["Overview", "Services", "Photos", "Contact"] as const;
 type Tab = (typeof TABS)[number];
 
 export function BusinessDetailTabs({ business }: { business: Business }) {
@@ -38,6 +38,23 @@ export function BusinessDetailTabs({ business }: { business: Business }) {
               <p className="text-muted-foreground">No services listed yet.</p>
             )}
           </ul>
+        )}
+        {tab === "Photos" && (
+          business.galleries?.length ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {business.galleries.map((photo) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={photo.id}
+                  src={photo.mediaUrl}
+                  alt={photo.caption || `${business.businessName} photo`}
+                  className="aspect-square w-full rounded-lg object-cover"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No photos uploaded yet.</p>
+          )
         )}
         {tab === "Contact" && (
           <ul className="space-y-2 text-sm">

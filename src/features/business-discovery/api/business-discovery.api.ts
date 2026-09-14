@@ -2,7 +2,7 @@
 import type { PaginatedEnvelope, ApiEnvelope } from "@/lib/api-response";
 import type { Business, NearbyBusiness } from "@/types/business.types";
 
-export interface GetBusinessesParams { page?: number; limit?: number; }
+export interface GetBusinessesParams { page?: number; limit?: number; categoryId?: string; }
 export interface SearchBusinessesParams extends GetBusinessesParams { q: string; }
 export interface NearbyBusinessesParams extends GetBusinessesParams {
   lat: number; lng: number; radius?: number;
