@@ -28,4 +28,6 @@
   MERCHANT_MESSAGES: "/dashboard/messages",
   MESSAGES: "/messages",
   ADMIN_DASHBOARD: "/admin",
+  ADMIN_VERIFICATION_QUEUE: "/admin/verification-queue",
+  ADMIN_MODERATION_QUEUE: "/admin/moderation-queue",
 } as const;
