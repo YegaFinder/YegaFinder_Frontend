@@ -1,4 +1,4 @@
-export type { Message, SenderRole, MerchantThread } from "@/types/business.types";
+export type { Message, SenderRole } from "@/types/business.types";
 
 export interface SendMessageRequest {
   businessId: string;

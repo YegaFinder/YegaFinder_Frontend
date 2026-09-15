@@ -119,6 +119,10 @@ export interface NewReview {
 // Chat / Messages
 export type SenderRole = "CUSTOMER" | "MERCHANT";
 
+// Matches the confirmed live implementation (BusinessMessagingController,
+// `messages` table) per CHAT_MESSAGES_FRONTEND_GUIDE.md §2.3 — NOT the dead
+// ChatController/chat_messages one. updatedAt/deletedAt are always present
+// on the wire even though nothing reads them yet (soft-delete support).
 export interface Message {
   id: string;
   businessId: string;
@@ -126,15 +130,19 @@ export interface Message {
   senderRole: SenderRole;
   text: string;
   createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
-export interface MerchantThread {
-  customerId: string;
-  customerName: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-}
+// REMOVED: MerchantThread. It modeled GET /messages/merchant/threads, which
+// CHAT_MESSAGES_FRONTEND_GUIDE.md §1 confirms is dead code — Express matches
+// BusinessMessagingController's GET /:businessId route first, so this
+// request actually runs with businessId literally equal to "merchant" and
+// never reaches the intended threads handler. There is no working
+// backend-provided "threads" shape today. See MerchantThread (client-derived,
+// not a wire type) in features/messaging/lib/groupMessagesByCustomer.ts for
+// the replacement — a threads view now built entirely from the flat message
+// list, not from this endpoint.
 
 // Payments
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
