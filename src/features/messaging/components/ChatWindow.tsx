@@ -3,15 +3,47 @@
 import { useEffect, useRef, useState } from "react";
 import { useMessages } from "../api/hooks/useMessages";
 import { useSendMessage } from "../api/hooks/useSendMessage";
+import type { Message, SenderRole } from "../types/message.types";
 
 interface ChatWindowProps {
   businessId: string;
   businessName?: string;
   onClose?: () => void;
+  /**
+   * Whose device is rendering this — determines which bubbles align right
+   * ("mine"). Defaults to "CUSTOMER" to keep existing customer-side callers
+   * (MessageBusinessButton) working unchanged. Merchant callers must pass
+   * "MERCHANT" explicitly, or every bubble renders on the wrong side.
+   */
+  viewerRole?: SenderRole;
+  /**
+   * Pre-filtered message list to render instead of fetching. Used by
+   * MerchantMessagesView, which fetches the business's full message list
+   * once via useMessages(businessId) and slices it into per-customer
+   * threads client-side (there's no backend customerId filter — see
+   * groupMessagesByCustomer.ts). When omitted, ChatWindow fetches for
+   * itself via useMessages(businessId) — the plain single-conversation
+   * case (MessageBusinessButton, the customer deep-link page).
+   */
+  messages?: Message[];
+  isLoading?: boolean;
+  /** Overrides the outer container's size/shape classes — defaults to the compact popup look used by MessageBusinessButton. */
+  className?: string;
 }
 
-export function ChatWindow({ businessId, businessName, onClose }: ChatWindowProps) {
-  const { data: messages, isLoading } = useMessages(businessId);
+export function ChatWindow({
+  businessId,
+  businessName,
+  onClose,
+  viewerRole = "CUSTOMER",
+  messages: messagesOverride,
+  isLoading: isLoadingOverride,
+  className = "h-96 w-full max-w-md rounded-lg border shadow-sm",
+}: ChatWindowProps) {
+  const ownQuery = useMessages(messagesOverride ? "" : businessId);
+  const messages = messagesOverride ?? ownQuery.data;
+  const isLoading = messagesOverride ? (isLoadingOverride ?? false) : ownQuery.isLoading;
+
   const sendMessage = useSendMessage();
   const [text, setText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -35,7 +67,7 @@ export function ChatWindow({ businessId, businessName, onClose }: ChatWindowProp
   };
 
   return (
-    <div className="flex h-96 w-full max-w-md flex-col rounded-lg border bg-background shadow-sm">
+    <div className={`flex flex-col bg-background ${className}`}>
       <div className="flex items-center justify-between border-b px-4 py-3">
         <p className="text-sm font-medium">
           {businessName ? `Chat with ${businessName}` : "Chat"}
@@ -58,7 +90,7 @@ export function ChatWindow({ businessId, businessName, onClose }: ChatWindowProp
           <p className="text-sm text-muted-foreground">No messages yet. Say hello.</p>
         ) : (
           messages.map((m) => {
-            const isMine = m.senderRole === "CUSTOMER";
+            const isMine = m.senderRole === viewerRole;
             return (
               <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                 <div
