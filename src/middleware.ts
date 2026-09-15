@@ -50,18 +50,31 @@ export function middleware(request: NextRequest) {
       pathname.startsWith(ROUTES.SAVED_PLACES) ||
       pathname.startsWith(ROUTES.FAVORITES) ||
       pathname.startsWith(ROUTES.BOOKINGS) ||
-      pathname.startsWith(ROUTES.CHECKOUT);
+      pathname.startsWith(ROUTES.CHECKOUT) ||
+      pathname.startsWith(ROUTES.MESSAGES);
     const isMerchantRoute = pathname.startsWith(ROUTES.MERCHANT_DASHBOARD);
+    const isAdminRoute = pathname.startsWith(ROUTES.ADMIN_DASHBOARD);
 
-    if (isCustomerRoute && role === "Merchant") {
-      // FIXED: was a hardcoded "/dashboard" string — exactly the drift
-      // ROUTES exists to prevent (routes.ts's own docblock says every
-      // path, "including in middleware.ts", should come from here).
-      return NextResponse.redirect(new URL(ROUTES.MERCHANT_DASHBOARD, request.url));
+    const homeForRole = (r?: string) => {
+      if (r === "Merchant") return ROUTES.MERCHANT_DASHBOARD;
+      if (r === "Admin" || r === "Moderator") return ROUTES.ADMIN_DASHBOARD;
+      return ROUTES.APP_HOME;
+    };
+
+    // FIXED: previously only checked `role === "Merchant"` / `role ===
+    // "Customer"` here, so an Admin or Moderator session hitting a
+    // customer/merchant-only route fell through with no redirect at all.
+    // Generalized to "does this role actually own this route group" so
+    // all four roles are covered symmetrically, including the new /admin
+    // group added in Sprint 6.
+    if (isCustomerRoute && role !== "Customer") {
+      return NextResponse.redirect(new URL(homeForRole(role), request.url));
     }
-
-    if (isMerchantRoute && role === "Customer") {
-      return NextResponse.redirect(new URL(ROUTES.APP_HOME, request.url));
+    if (isMerchantRoute && role !== "Merchant") {
+      return NextResponse.redirect(new URL(homeForRole(role), request.url));
+    }
+    if (isAdminRoute && role !== "Admin" && role !== "Moderator") {
+      return NextResponse.redirect(new URL(homeForRole(role), request.url));
     }
   }
 
@@ -82,6 +95,9 @@ export const config = {
     "/nearby",
     "/checkout",
     "/checkout/:path*",
+    "/messages",
+    "/admin",
+    "/admin/:path*",
     "/login",
     "/register",
     "/forgot-password",
